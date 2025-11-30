@@ -1,24 +1,45 @@
 name: RC Tag from release
+
 on:
   push:
-    branches: [release]
+    branches:
+      - "release/**"   # Dispara em qualquer release/x.y.z (prefixo do git-flow)
 
 jobs:
   tag-rc:
+    # Evitar RCs duplicados em pushes simultâneos da MESMA release
+    concurrency:
+      group: rc-${{ github.ref }}
+      cancel-in-progress: false
+
     permissions:
       contents: write
+
     runs-on: ubuntu-latest
+
     steps:
+      # Checkout com histórico completo (precisamos ver tags anteriores)
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
-      - name: Read base version
+      # Garantia defensiva: só seguir se for release/*
+      - name: Guard (somente em release/*)
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            release/*) echo "OK: ${GITHUB_REF_NAME}";;
+            *) echo "Este workflow só deve rodar em release/*"; exit 1;;
+          esac
+
+      # Ler a versão base a partir do package.json (ex.: 1.4.0)
+      - name: Ler versão base do package.json
         id: ver
         run: |
-          BASE=$(cat VERSION | tr -d '\n')
+          BASE=$(node -p "require('./package.json').version")
           echo "base=${BASE}" >> $GITHUB_OUTPUT
+          echo "Versão base: ${BASE}"
 
-      - name: Compute next RC
+      # Calcular próximo RC a partir das tags existentes (vX.Y.Z-rc.N)
+      - name: Calcular próximo RC
         id: rc
         run: |
           set -euo pipefail
@@ -27,18 +48,20 @@ jobs:
           if [ -z "${LAST}" ]; then NEXT=1; else NEXT=$((LAST+1)); fi
           TAG="v${BASE}-rc.${NEXT}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Próxima RC: ${TAG}"
 
-      - name: Create RC tag
+      # Criar a tag anotada do RC e enviar para o GitHub
+      - name: Criar tag RC
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} from branch release"
+          git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} a partir de ${GITHUB_REF_NAME}"
           git push origin "${{ steps.rc.outputs.tag }}"
 
-      - name: Update CHANGELOG
+      # Atualizar CHANGELOG incrementalmente (padrão Conventional Commits - Angular)
+      - name: Atualizar CHANGELOG (incremental)
         run: |
           npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
           git add CHANGELOG.md
           git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
           git push origin HEAD:${GITHUB_REF_NAME}
-
