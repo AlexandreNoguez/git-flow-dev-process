@@ -152,14 +152,14 @@ git push -u origin release/1.4.0
 git log --oneline v1.4.0-rc.1..v1.4.0-rc.2
 ```
 
-<!-- - Para gerar CHANGELOG cumulativo durante a release:
+- Para gerar CHANGELOG cumulativo durante a release:
 
 ```bash
 npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
 git add CHANGELOG.md
 git commit -m "chore(changelog): refresh during release 1.4.0"
 git push origin HEAD
-``` -->
+```
 
 ## 2.3 Aprovado em QA? **Finalizar** a release (promover para PROD)
 
