@@ -152,9 +152,9 @@ git log --oneline v1.4.0-rc.1..v1.4.0-rc.2
 # Anti-divergência (passo rápido e seguro)
 git fetch --all --prune
 
-git checkout master   && git pull --ff-only origin master
-git checkout develop  && git pull --ff-only origin develop
-git checkout release/1.4.0 && git pull --ff-only origin release/1.4.0
+git checkout master   && git pull origin master
+git checkout develop  && git pull origin develop
+git checkout release/1.4.0 && git pull origin release/1.4.0
 ```
 
 Agora finalize:
