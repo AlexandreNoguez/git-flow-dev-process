@@ -51,7 +51,7 @@ git add .
 git commit -m "feat(search): add debounced query and empty state"
 
 # Push feature branch and open PR to "dev"
-git push -u origin feature/HYP-123-add-search
+git flow <tipo-da-branch> publish
 # Open PR on GitHub → base=dev, compare=feature/HYP-123-add-search
 ```
 
