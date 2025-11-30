@@ -7,18 +7,18 @@ Modela branches, versionamento **SemVer (`Semantic Version x.y.z`)**, geração 
 
 ## Visão geral
 
-* **Modelo de branches**
+- **Modelo de branches**
 
-  * `develop` → desenvolvimento contínuo (ambiente DEV).
-  * `release/x.y.z` → estabilização para gerar RCs que vão ao **QA**.
-  * `master` → produção; recebe **tags estáveis** `vX.Y.Z`.
+  - `develop` → desenvolvimento contínuo (ambiente DEV).
+  - `release/x.y.z` → estabilização para gerar RCs que vão ao **QA**.
+  - `master` → produção; recebe **tags estáveis** `vX.Y.Z`.
 
-* **Versionamento:** **SemVer** (`MAJOR.MINOR.PATCH`)
+- **Versionamento:** **SemVer** (`MAJOR.MINOR.PATCH`)
 
-  * `vX.Y.Z-rc.N` = *release candidate* (QA).
-  * `vX.Y.Z` = versão estável (PROD).
+  - `vX.Y.Z-rc.N` = _release candidate_ (QA).
+  - `vX.Y.Z` = versão estável (PROD).
 
-* **Commits:** **Conventional Commits** (`feat:`, `fix:`, `perf:`, `refactor:`, `chore:`, etc.).
+- **Commits:** **Conventional Commits** (`feat:`, `fix:`, `perf:`, `refactor:`, `chore:`, etc.).
 
 ---
 
@@ -26,7 +26,7 @@ Modela branches, versionamento **SemVer (`Semantic Version x.y.z`)**, geração 
 
 ## Pré-requisitos
 
-* Git-flow configurado com seus **nomes reais** de branches:
+- Git-flow configurado com seus **nomes reais** de branches:
 
 ```bash
 # Inicializa git-flow com defaults
@@ -44,8 +44,8 @@ git config gitflow.prefix.bugfix  "bugfix/"
 git config gitflow.prefix.versiontag "v"
 ```
 
-* Padrão de commits: **Conventional Commits**.
-* Pipelines conectadas (GitHub Actions/Vercel/etc.).
+- Padrão de commits: **Conventional Commits**.
+- Pipelines conectadas (GitHub Actions/Vercel/etc.).
 
 ## Criar/entregar **feature**
 
@@ -85,8 +85,8 @@ git checkout develop && git pull origin develop
 
 ## O que **NÃO** fazer
 
-* **Não** alterar `package.json.version` nem criar tags. Isso é papel do **Tech Lead** na *branch de release*.
-* **Não** comitar diretamente em `master`, `develop` ou `release/*`.
+- **Não** alterar `package.json.version` nem criar tags. Isso é papel do **Tech Lead** na _branch de release_.
+- **Não** comitar diretamente em `master`, `develop` ou `release/*`.
 
 ## Hotfix só para DEV (não PROD)
 
@@ -105,19 +105,19 @@ Se for correção **urgente** (incidente):
 
 ## Objetivo
 
-* Congelar versão da `develop`.
-* Estabilizar em `release/x.y.z`.
-* Produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**.
-* Aprovado? Promover a **PROD** com **tag estável** `vX.Y.Z` na `master`.
-* Gerar **CHANGELOG** automático (Conventional Commits).
+- Congelar versão da `develop`.
+- Estabilizar em `release/x.y.z`.
+- Produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**.
+- Aprovado? Promover a **PROD** com **tag estável** `vX.Y.Z` na `master`.
+- Gerar **CHANGELOG** automático (Conventional Commits).
 
 ## Pré-requisitos
 
-* `develop` verde (build/tests ok).
-* **`package.json.version`** ajustado na branch de release para o **próximo** `X.Y.Z`.
-* Git-flow e prefixos configurados.
-* GitHub Actions para **RC** e, opcionalmente, **Prod** (modelos abaixo).
-* Opcional: deploys (Vercel/Azure/etc.) ligados às **tags**.
+- `develop` verde (build/tests ok).
+- **`package.json.version`** ajustado na branch de release para o **próximo** `X.Y.Z`.
+- Git-flow e prefixos configurados.
+- GitHub Actions para **RC** e, opcionalmente, **Prod** (modelos abaixo).
+- Opcional: deploys (Vercel/Azure/etc.) ligados às **tags**.
 
 ## 2.1 Criar a **release** (a partir de `develop`)
 
@@ -140,19 +140,19 @@ git push -u origin release/1.4.0
 
 > **O que acontece agora**
 >
-> * O workflow **rc-on-release** (abaixo) cria `v1.4.0-rc.1`.
-> * Cada push em `release/1.4.0` cria `v1.4.0-rc.2`, `rc.3`…
+> - O workflow **rc-on-release** (abaixo) cria `v1.4.0-rc.1`.
+> - Cada push em `release/1.4.0` cria `v1.4.0-rc.2`, `rc.3`…
 
 ## 2.2 Enviar RC para **QA**
 
-* Entregar ao QA a **tag** (ex.: `v1.4.0-rc.2`) e/ou o **link do deploy** dessa tag.
-* Para ver diferenças entre RCs:
+- Entregar ao QA a **tag** (ex.: `v1.4.0-rc.2`) e/ou o **link do deploy** dessa tag.
+- Para ver diferenças entre RCs:
 
 ```bash
 git log --oneline v1.4.0-rc.1..v1.4.0-rc.2
 ```
 
-* Para gerar CHANGELOG cumulativo durante a release:
+- Para gerar CHANGELOG cumulativo durante a release:
 
 ```bash
 npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
@@ -164,6 +164,18 @@ git push origin HEAD
 ## 2.3 Aprovado em QA? **Finalizar** a release (promover para PROD)
 
 ```bash
+# Gerar notas desta versão (entre última tag e HEAD)
+NOTES=$(mktemp)
+npx -y conventional-changelog-cli -p angular -r 1 > "$NOTES"
+
+# Finalizar a release já preenchendo a mensagem da TAG
+git flow release finish -m "$(cat "$NOTES")" 1.4.0
+
+# Publicar
+git push origin master develop --tags
+```
+
+<!-- ```bash
 # O finish vai:
 # - Merge release/1.4.0 -> master
 # - Tag master como v1.4.0 (annotated tag)
@@ -175,7 +187,7 @@ git flow release finish 1.4.0
 git push origin master
 git push origin develop
 git push origin --tags
-```
+``` -->
 
 > **Agora** a tag estável `v1.4.0` está no GitHub.
 > Sugestão: crie uma **GitHub Release** a partir desta tag e anexe o trecho do `CHANGELOG.md` correspondente.
@@ -193,7 +205,7 @@ git flow hotfix finish 1.4.1
 git push origin master develop --tags
 ```
 
-* Cria a **tag estável** `v1.4.1` direto na `master` e integra o fix em `develop`.
+- Cria a **tag estável** `v1.4.1` direto na `master` e integra o fix em `develop`.
 
 ## 2.5 Rollback (se criou uma tag errada)
 
@@ -219,7 +231,7 @@ name: RC Tag from release
 on:
   push:
     branches:
-      - "release/**"  # qualquer release/x.y.z (prefixo git-flow)
+      - "release/**" # qualquer release/x.y.z (prefixo git-flow)
 
 jobs:
   tag-rc:
@@ -298,7 +310,7 @@ name: Prod deploy on stable tag
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"  # apenas tags estáveis SemVer
+      - "v[0-9]+.[0-9]+.[0-9]+" # apenas tags estáveis SemVer
 
 jobs:
   release:
@@ -346,9 +358,9 @@ jobs:
 
 ### SemVer — quando mudar
 
-* **MAJOR**: quebrar compatibilidade (breaking changes).
-* **MINOR**: novas features compatíveis.
-* **PATCH**: correções/pequenos ajustes.
+- **MAJOR**: quebrar compatibilidade (breaking changes).
+- **MINOR**: novas features compatíveis.
+- **PATCH**: correções/pequenos ajustes.
 
 ---
 
@@ -356,18 +368,18 @@ jobs:
 
 ### Antes de criar uma release (`release/X.Y.Z`)
 
-* [ ] `develop` atualizada e verde.
-* [ ] **`package.json.version = X.Y.Z`** (ajustado na branch de release).
-* [ ] PRs essenciais mesclados.
-* [ ] Lint/tests ok.
+- [ ] `develop` atualizada e verde.
+- [ ] **`package.json.version = X.Y.Z`** (ajustado na branch de release).
+- [ ] PRs essenciais mesclados.
+- [ ] Lint/tests ok.
 
 ### Para aprovar RC e promover a PROD
 
-* [ ] RC implantado e testado em QA (`vX.Y.Z-rc.N`).
-* [ ] Testes funcionais/integração aprovados.
-* [ ] `CHANGELOG.md` revisado.
-* [ ] `git flow release finish X.Y.Z` executado.
-* [ ] `git push origin master develop --tags` concluído.
+- [ ] RC implantado e testado em QA (`vX.Y.Z-rc.N`).
+- [ ] Testes funcionais/integração aprovados.
+- [ ] `CHANGELOG.md` revisado.
+- [ ] `git flow release finish X.Y.Z` executado.
+- [ ] `git push origin master develop --tags` concluído.
 
 ---
 
@@ -431,5 +443,5 @@ git push origin master develop --tags
 
 Com isso:
 
-* **DEV** tem um passo-a-passo claro do dia a dia.
-* **TECH LEAD** controla **versionamento**, **RCs**, **QA** e **PROD** via tags e changelog, mantendo rastreabilidade de “o que entrou em cada pacote”.
+- **DEV** tem um passo-a-passo claro do dia a dia.
+- **TECH LEAD** controla **versionamento**, **RCs**, **QA** e **PROD** via tags e changelog, mantendo rastreabilidade de “o que entrou em cada pacote”.
