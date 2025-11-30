@@ -1,69 +1,119 @@
 name: RC Tag from releases
+
 on:
   push:
     branches:
-      - "releases/**"
+      - "releases/**"          # roda para qualquer releases/x.y.z
+    paths-ignore:
+      - "CHANGELOG.md"         # evita loop quando o bot commita o changelog
+      - ".tmp/**"
 
 jobs:
   tag-rc:
     concurrency:
-      group: rc-${{ github.ref }}
+      group: rc-${{ github.ref }}     # 1 pipeline por release branch
       cancel-in-progress: false
     permissions:
       contents: write
     runs-on: ubuntu-latest
 
     steps:
+      # Histórico completo + tags
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
+      # Garantia: só aceite releases/*
       - name: Guard (somente em releases/*)
+        shell: bash
         run: |
           case "${GITHUB_REF_NAME}" in
             releases/*) echo "OK: ${GITHUB_REF_NAME}";;
             *) echo "Este workflow só deve rodar em releases/*"; exit 1;;
           esac
 
+      # Ler a versão base do package.json (ex.: 1.4.0)
       - name: Ler versão base do package.json
         id: ver
+        shell: bash
         run: |
           BASE=$(node -p "require('./package.json').version")
           echo "base=${BASE}" >> $GITHUB_OUTPUT
           echo "Versão base: ${BASE}"
 
-      - name: Calcular próximo RC
-        id: rc
+      # Validar que a branch releases/x.y.z casa com o package.json
+      - name: Validar branch x versão
+        shell: bash
         run: |
-          set -euo pipefail
-          BASE="${{ steps.ver.outputs.base }}"
-          LAST=$(git tag -l "v${BASE}-rc.*" | sort -V | tail -1)
-          if [ -z "${LAST}" ]; then NEXT=1; else NEXT=$((LAST+1)); fi
-          TAG="v${BASE}-rc.${NEXT}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "Próxima RC: ${TAG}"
+          BRANCH_VER="${GITHUB_REF_NAME#releases/}"
+          PKG_VER="${{ steps.ver.outputs.base }}"
+          if [ "$BRANCH_VER" != "$PKG_VER" ]; then
+            echo "ERRO: package.json=$PKG_VER diverge da branch releases/$BRANCH_VER"
+            exit 1
+          fi
+          echo "OK: branch e package.json em $PKG_VER"
 
-      # ↓↓↓ GERAR NOTAS A PARTIR DOS COMMITS (entre a última tag e o HEAD)
-      - name: Gerar notas para a tag (Conventional Commits)
-        id: notes
+      # Calcular próximo RC (vX.Y.Z-rc.N)
+      - name: Calcular próximo RC (robusto)
+        id: rc
+        shell: bash
+        run: |
+          set -eo pipefail
+          BASE="${{ steps.ver.outputs.base }}"
+
+          TAGS="$(git tag -l "v${BASE}-rc.[0-9]*" || true)"
+          if [ -z "$TAGS" ]; then
+            LAST=0
+          else
+            LAST="$(printf '%s\n' "$TAGS" \
+              | sed -E 's/.*-rc\.([0-9]+)$/\1/' \
+              | sort -n | tail -1)"
+            [ -z "$LAST" ] && LAST=0
+          fi
+
+          NEXT=$((LAST + 1))
+          TAG="v${BASE}-rc.${NEXT}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "LAST=$LAST NEXT=$NEXT TAG=$TAG"
+
+      # Se a tag já existir (rerun/concorrência), não recrie
+      - name: Verificar se a tag já existe
+        id: exists
+        shell: bash
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ steps.rc.outputs.tag }}" > /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag já existe. Pulando criação."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Gerar notas para a tag (entre última tag e HEAD)
+      - name: Gerar notas (Conventional Commits)
+        if: steps.exists.outputs.exists == 'false'
+        shell: bash
         run: |
           mkdir -p .tmp
-          # Gera notas APENAS desde a última tag (r=1)
           npx -y conventional-changelog-cli -p angular -r 1 > .tmp/TAG_NOTES.md
-          echo "preview:"
+          echo "Preview notas:"
           head -n 30 .tmp/TAG_NOTES.md || true
 
-      # ↓↓↓ CRIAR A TAG ANOTADA USANDO AS NOTAS GERADAS
-      - name: Criar tag RC (anotada com notas)
+      # Criar tag RC anotada com as notas
+      - name: Criar tag RC
+        if: steps.exists.outputs.exists == 'false'
+        shell: bash
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.rc.outputs.tag }}" -F .tmp/TAG_NOTES.md
           git push origin "${{ steps.rc.outputs.tag }}"
 
-      # (Opcional) Atualizar CHANGELOG.md incremental
+      # (Opcional) Atualizar CHANGELOG incrementando
       - name: Atualizar CHANGELOG (incremental)
+        if: steps.exists.outputs.exists == 'false'
+        shell: bash
         run: |
           npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
           git add CHANGELOG.md
           git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
+          # este push NÃO re-dispara o workflow por causa do paths-ignore
           git push origin HEAD:${GITHUB_REF_NAME}
