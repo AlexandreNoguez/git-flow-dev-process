@@ -52,7 +52,7 @@ git config gitflow.prefix.versiontag "v"
 ```bash
 # Sempre parta da develop atualizada
 git checkout develop
-git pull origin develop
+git pull
 
 # Inicia a feature
 git flow feature start HYP-123-add-search
@@ -62,7 +62,7 @@ git add .
 git commit -m "feat(search): add debounced query and empty state"
 
 # Publica a feature e abre PR -> develop
-git flow feature publish HYP-123-add-search
+git flow feature publish
 # Abrir PR no GitHub: base=develop, compare=feature/HYP-123-add-search
 ```
 
