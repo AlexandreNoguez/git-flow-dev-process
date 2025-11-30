@@ -1,13 +1,13 @@
-name: RC Tag from release
+name: RC Tag from releases
 
 on:
   push:
     branches:
-      - "release/**"   # Dispara em qualquer release/x.y.z (prefixo do git-flow)
+      - "releases/**"   # Dispara em qualquer releases/x.y.z (prefixo do git-flow)
 
 jobs:
   tag-rc:
-    # Evitar RCs duplicados em pushes simultâneos da MESMA release
+    # Evitar RCs duplicados em pushes simultâneos da MESMA releases
     concurrency:
       group: rc-${{ github.ref }}
       cancel-in-progress: false
@@ -22,12 +22,12 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
-      # Garantia defensiva: só seguir se for release/*
-      - name: Guard (somente em release/*)
+      # Garantia defensiva: só seguir se for releases/*
+      - name: Guard (somente em releases/*)
         run: |
           case "${GITHUB_REF_NAME}" in
-            release/*) echo "OK: ${GITHUB_REF_NAME}";;
-            *) echo "Este workflow só deve rodar em release/*"; exit 1;;
+            releases/*) echo "OK: ${GITHUB_REF_NAME}";;
+            *) echo "Este workflow só deve rodar em releases/*"; exit 1;;
           esac
 
       # Ler a versão base a partir do package.json (ex.: 1.4.0)
