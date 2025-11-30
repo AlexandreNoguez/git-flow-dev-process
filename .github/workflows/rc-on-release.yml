@@ -1,8 +1,12 @@
 name: RC Tag from releases
+
 on:
   push:
     branches:
       - "releases/**"
+    paths-ignore:
+      - "CHANGELOG.md"
+      - ".tmp/**"
 
 jobs:
   tag-rc:
@@ -18,6 +22,7 @@ jobs:
         with: { fetch-depth: 0 }
 
       - name: Guard (somente em releases/*)
+        shell: bash
         run: |
           case "${GITHUB_REF_NAME}" in
             releases/*) echo "OK: ${GITHUB_REF_NAME}";;
@@ -26,44 +31,27 @@ jobs:
 
       - name: Ler versão base do package.json
         id: ver
+        shell: bash
         run: |
           BASE=$(node -p "require('./package.json').version")
           echo "base=${BASE}" >> $GITHUB_OUTPUT
-          echo "Versão base: ${BASE}"
 
       - name: Calcular próximo RC
         id: rc
+        shell: bash
         run: |
-          set -euo pipefail
+          set -eo pipefail
           BASE="${{ steps.ver.outputs.base }}"
-          LAST=$(git tag -l "v${BASE}-rc.*" | sort -V | tail -1)
-          if [ -z "${LAST}" ]; then NEXT=1; else NEXT=$((LAST+1)); fi
-          TAG="v${BASE}-rc.${NEXT}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "Próxima RC: ${TAG}"
+          TAGS="$(git tag -l "v${BASE}-rc.[0-9]*" || true)"
+          if [ -z "$TAGS" ]; then LAST=0
+          else LAST="$(printf '%s\n' "$TAGS" | sed -E 's/.*-rc\.([0-9]+)$/\1/' | sort -n | tail -1)"; fi
+          NEXT=$((LAST + 1))
+          echo "tag=v${BASE}-rc.${NEXT}" >> $GITHUB_OUTPUT
 
-      # ↓↓↓ GERAR NOTAS A PARTIR DOS COMMITS (entre a última tag e o HEAD)
-      - name: Gerar notas para a tag (Conventional Commits)
-        id: notes
-        run: |
-          mkdir -p .tmp
-          # Gera notas APENAS desde a última tag (r=1)
-          npx -y conventional-changelog-cli -p angular -r 1 > .tmp/TAG_NOTES.md
-          echo "preview:"
-          head -n 30 .tmp/TAG_NOTES.md || true
-
-      # ↓↓↓ CRIAR A TAG ANOTADA USANDO AS NOTAS GERADAS
-      - name: Criar tag RC (anotada com notas)
+      - name: Criar tag RC
+        shell: bash
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.rc.outputs.tag }}" -F .tmp/TAG_NOTES.md
+          git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} a partir de ${GITHUB_REF_NAME}"
           git push origin "${{ steps.rc.outputs.tag }}"
-
-      # (Opcional) Atualizar CHANGELOG.md incremental
-      - name: Atualizar CHANGELOG (incremental)
-        run: |
-          npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
-          git add CHANGELOG.md
-          git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
-          git push origin HEAD:${GITHUB_REF_NAME}

@@ -163,7 +163,7 @@ git push origin HEAD
 
 ## 2.3 Aprovado em QA? **Finalizar** a release (promover para PROD)
 
-```bash
+<!-- ```bash
 # Gerar notas desta versão (entre última tag e HEAD)
 NOTES=$(mktemp)
 npx -y conventional-changelog-cli -p angular -r 1 > "$NOTES"
@@ -173,9 +173,9 @@ git flow release finish -m "$(cat "$NOTES")" 1.4.0
 
 # Publicar
 git push origin master develop --tags
-```
+``` -->
 
-<!-- ```bash
+```bash
 # O finish vai:
 # - Merge release/1.4.0 -> master
 # - Tag master como v1.4.0 (annotated tag)
@@ -187,7 +187,7 @@ git flow release finish 1.4.0
 git push origin master
 git push origin develop
 git push origin --tags
-``` -->
+```
 
 > **Agora** a tag estável `v1.4.0` está no GitHub.
 > Sugestão: crie uma **GitHub Release** a partir desta tag e anexe o trecho do `CHANGELOG.md` correspondente.
