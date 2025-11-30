@@ -2,7 +2,7 @@ name: pre-release on RC tag
 on:
   push:
     tags:
-      - "v*.*.*-rc*"
+      - "v*-rc.*" # qualquer RC
 
 jobs:
   prerelease:
