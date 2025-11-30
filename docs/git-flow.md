@@ -1,38 +1,37 @@
-# Guia de Fluxo Git-Flow + RCs + QA/PROD (com comentários em PT-BR)
+# Guia de Fluxo Git-Flow + RCs + QA/PROD (comentado em PT-BR)
 
 Documentação enxuta (mas completa) dividida em duas partes: **DEV (fluxo diário)** e **TECH LEAD (versionamento, RCs, QA e PROD)**.
-Modela branches, versionamento **SemVer (`Semantic Version x.y.z`)**, geração de **RCs (`vX.Y.Z-rc.N`)** e **tag estável (`vX.Y.Z`)**.
+Modelo de branches, versionamento **SemVer (`x.y.z`)**, geração de **RCs (`vX.Y.Z-rc.N`)** e **tag estável (`vX.Y.Z`)**.
 
 ---
 
-## Visão geral
+## Visão Geral
 
-- **Modelo de branches**
+* **Modelo de branches**
 
-  - `develop` → desenvolvimento contínuo (ambiente DEV).
-  - `release/x.y.z` → estabilização para gerar RCs que vão ao **QA**.
-  - `master` → produção; recebe **tags estáveis** `vX.Y.Z`.
+  * `develop` → desenvolvimento contínuo (ambiente **DEV**).
+  * `release/x.y.z` → estabilização da versão; gera **RCs** (vai para **QA**).
+  * `master` → produção; recebe **tags estáveis** `vX.Y.Z`.
 
-- **Versionamento:** **SemVer** (`MAJOR.MINOR.PATCH`)
+* **Versionamento:** **SemVer**
+  `MAJOR.MINOR.PATCH`
+  `vX.Y.Z-rc.N` = *release candidate* (QA) · `vX.Y.Z` = versão estável (PROD).
 
-  - `vX.Y.Z-rc.N` = _release candidate_ (QA).
-  - `vX.Y.Z` = versão estável (PROD).
-
-- **Commits:** **Conventional Commits** (`feat:`, `fix:`, `perf:`, `refactor:`, `chore:`, etc.).
+* **Commits:** **Conventional Commits** (`feat:`, `fix:`, `perf:`, `refactor:`, `chore:`, etc.).
 
 ---
 
-# 1) DEV — Fluxo diário (features/bugfix/hotfix em DEV)
+# 1) DEV — fluxo diário (features/bugfix/hotfix em DEV)
 
 ## Pré-requisitos
 
-- Git-flow configurado com seus **nomes reais** de branches:
+* Git-flow com **seus nomes reais** de branches:
 
 ```bash
 # Inicializa git-flow com defaults
-git flow init -d
+git flow init
 
-# Ajusta mapeamentos para seu naming
+# Ajusta mapeamentos para o naming adotado
 git config gitflow.branch.master master
 git config gitflow.branch.develop develop
 
@@ -44,10 +43,10 @@ git config gitflow.prefix.bugfix  "bugfix/"
 git config gitflow.prefix.versiontag "v"
 ```
 
-- Padrão de commits: **Conventional Commits**.
-- Pipelines conectadas (GitHub Actions/Vercel/etc.).
+* Padrão de commits: **Conventional Commits**.
+* Pipelines conectadas (GitHub Actions/Vercel/etc.).
 
-## Criar/entregar **feature**
+## Feature
 
 ```bash
 # Sempre parta da develop atualizada
@@ -66,64 +65,59 @@ git flow feature publish
 # Abrir PR no GitHub: base=develop, compare=feature/HYP-123-add-search
 ```
 
-## Corrigir **bug** (em DEV)
+## Bugfix (em DEV)
 
 ```bash
 git checkout develop && git pull origin develop
 git flow bugfix start HYP-456-fix-pagination
-# commits...
-git push -u origin bugfix/HYP-456-fix-pagination
+# ... commits ...
+git flow bugfix publish
 # Abrir PR -> develop
 ```
 
-## Sincronizar máquina
+## Sincronização rápida
+**caso acuse divergência na develop pode tentar os seguintes comandos**:
 
 ```bash
 git fetch --all --prune
-git checkout develop && git pull origin develop
+git checkout develop && git pull --ff-only origin develop
 ```
 
 ## O que **NÃO** fazer
 
-- **Não** alterar `package.json.version` nem criar tags. Isso é papel do **Tech Lead** na _branch de release_.
-- **Não** comitar diretamente em `master`, `develop` ou `release/*`.
+* **Não** alterar `package.json.version` nem criar tags — isso é do **Tech Lead** na *branch de release*.
+* **Não** comitar diretamente em `master`, `develop` ou `release/*`.
 
-## Hotfix só para DEV (não PROD)
+## Hotfix que **não** vai para PROD
 
-Se a correção **não** precisa ir urgente para produção, trate como **bugfix** normal (`bugfix/*` → PR para `develop`).
-
-Se for correção **urgente** (incidente):
-
-1. Tech Lead cria `hotfix/x.y.z` a partir de `master`.
-2. Você commita nele.
-3. `git flow hotfix publish`.
-4. Tech Lead finaliza hotfix para gerar a versão de correção.
+Trate como **bugfix** normal (`bugfix/*` → PR para `develop`).
+Para incidente **urgente em PROD**, ver seção **Hotfix** do Tech Lead.
 
 ---
 
-# 2) TECH LEAD — Versionamento, RCs, QA e PROD
+# 2) TECH LEAD — versionamento, RCs, QA e PROD
 
 ## Objetivo
 
-- Congelar versão da `develop`.
-- Estabilizar em `release/x.y.z`.
-- Produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**.
-- Aprovado? Promover a **PROD** com **tag estável** `vX.Y.Z` na `master`.
-- Gerar **CHANGELOG** automático (Conventional Commits).
+* Congelar a `develop`.
+* Estabilizar em `release/x.y.z`.
+* Produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**.
+* Aprovado? **Finalizar** e marcar **tag estável** `vX.Y.Z` em `master`.
+* Gerar **Release Notes/CHANGELOG** a partir dos **Conventional Commits**.
 
 ## Pré-requisitos
 
-- `develop` verde (build/tests ok).
-- **`package.json.version`** ajustado na branch de release para o **próximo** `X.Y.Z`.
-- Git-flow e prefixos configurados.
-- GitHub Actions para **RC** e, opcionalmente, **Prod** (modelos abaixo).
-- Opcional: deploys (Vercel/Azure/etc.) ligados às **tags**.
+* `develop` **verde** (build/tests ok).
+* **`package.json.version`** ajustado **na branch de release** para o **próximo** `X.Y.Z`.
+* Git-flow e prefixos configurados.
+* Workflows do GitHub para **RC** e, opcionalmente, **PROD** (abaixo).
+* (Opcional) deploys por **tag** (Vercel/Azure/etc).
 
 ## 2.1 Criar a **release** (a partir de `develop`)
 
 ```bash
 # Garantir develop atualizada
-git checkout develop && git pull origin develop
+git checkout develop && git pull --ff-only origin develop
 
 # Iniciar a nova release (SemVer)
 git flow release start 1.4.0
@@ -138,44 +132,34 @@ git commit -m "chore(release): set package.json version to 1.4.0"
 git push -u origin release/1.4.0
 ```
 
-> **O que acontece agora**
->
-> - O workflow **rc-on-release** (abaixo) cria `v1.4.0-rc.1`.
-> - Cada push em `release/1.4.0` cria `v1.4.0-rc.2`, `rc.3`…
+> **Automação:** o workflow **rc-on-release** (abaixo) criará `v1.4.0-rc.1`.
+> A cada push na `release/1.4.0`, gera `v1.4.0-rc.2`, `rc.3`…
 
 ## 2.2 Enviar RC para **QA**
 
-- Entregar ao QA a **tag** (ex.: `v1.4.0-rc.2`) e/ou o **link do deploy** dessa tag.
-- Para ver diferenças entre RCs:
+* Entregar ao QA a **tag** (ex.: `v1.4.0-rc.2`) e/ou o **link de deploy** dessa tag.
+* Ver diferenças entre RCs:
 
 ```bash
 git log --oneline v1.4.0-rc.1..v1.4.0-rc.2
 ```
 
-- Para gerar CHANGELOG cumulativo durante a release:
+## 2.3 **Finalizar** a release (promover a PROD)
+
+> **Antes** do `finish`, garanta que **tudo local** está **em fast-forward** com o remoto para evitar “divergences”.
 
 ```bash
-npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
-git add CHANGELOG.md
-git commit -m "chore(changelog): refresh during release 1.4.0"
-git push origin HEAD
+# Anti-divergência (passo rápido e seguro)
+git fetch --all --prune
+
+git checkout master   && git pull --ff-only origin master
+git checkout develop  && git pull --ff-only origin develop
+git checkout release/1.4.0 && git pull --ff-only origin release/1.4.0
 ```
 
-## 2.3 Aprovado em QA? **Finalizar** a release (promover para PROD)
+Agora finalize:
 
 ```bash
-# Gerar notas desta versão (entre última tag e HEAD)
-NOTES=$(mktemp)
-npx -y conventional-changelog-cli -p angular -r 1 > "$NOTES"
-
-# Finalizar a release já preenchendo a mensagem da TAG
-git flow release finish -m "$(cat "$NOTES")" 1.4.0
-
-# Publicar
-git push origin master develop --tags
-```
-
-<!-- ```bash
 # O finish vai:
 # - Merge release/1.4.0 -> master
 # - Tag master como v1.4.0 (annotated tag)
@@ -187,153 +171,166 @@ git flow release finish 1.4.0
 git push origin master
 git push origin develop
 git push origin --tags
-``` -->
+```
 
-> **Agora** a tag estável `v1.4.0` está no GitHub.
-> Sugestão: crie uma **GitHub Release** a partir desta tag e anexe o trecho do `CHANGELOG.md` correspondente.
+> **Dica:** se quiser preencher a **mensagem da tag** com notas automáticas:
+>
+> ```bash
+> NOTES=$(mktemp)
+> npx -y conventional-changelog-cli -p angular -r 1 > "$NOTES"
+> git flow release finish -m "$(cat "$NOTES")" 1.4.0
+> ```
 
 ## 2.4 Hotfix **urgente em PROD**
 
 ```bash
-git checkout master && git pull origin master
+git checkout master && git pull --ff-only origin master
 
 git flow hotfix start 1.4.1
-# commits do fix...
-git commit -m "fix(auth): null token guards for sso"
-
+# ... commits do fix ...
 git flow hotfix finish 1.4.1
 git push origin master develop --tags
 ```
 
-- Cria a **tag estável** `v1.4.1` direto na `master` e integra o fix em `develop`.
-
-## 2.5 Rollback (se criou uma tag errada)
+## 2.5 Rollback de tag
 
 ```bash
-# Apaga tag local e remota
+# Remove a tag local e remota
 git tag -d v1.4.0-rc.3
 git push origin :refs/tags/v1.4.0-rc.3
 ```
 
 ---
 
-## CI por tags — exemplos de workflows
+## CI por tags — **Workflows prontos**
+
+> **Importante:** para evitar “divergence” no `finish`, **não** comitamos `CHANGELOG.md` automaticamente no RC.
+> Em RC: **apenas** criamos a **tag**.
+> Em tag **estável**, geramos **Release Notes** (sem tocar no repo).
 
 ### A) **RCs (QA)** — `.github/workflows/rc-on-release.yml`
 
-> Dispara a cada push em `release/**`; cria a **próxima RC** e atualiza o `CHANGELOG.md`.
-> **Lê a versão base do `package.json`** (ex.: `1.4.0`) e numera `-rc.N`.
-
 ```yaml
-# .github/workflows/rc-on-release.yml
+# Gera a próxima tag RC (vX.Y.Z-rc.N) ao atualizar release/*
 name: RC Tag from release
 
 on:
   push:
     branches:
-      - "release/**" # qualquer release/x.y.z (prefixo git-flow)
+      - "release/**"           # qualquer release/x.y.z
+    paths-ignore:
+      - "CHANGELOG.md"         # evita loop em caso de commits manuais
+      - ".tmp/**"
 
 jobs:
   tag-rc:
-    # Evita RCs duplicadas em pushes simultâneos na MESMA release
     concurrency:
-      group: rc-${{ github.ref }}
+      group: rc-${{ github.ref }} # 1 pipeline por release
       cancel-in-progress: false
-
     permissions:
       contents: write
-
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout com histórico completo (precisamos ver tags anteriores)
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0 } # histórico completo para ver tags
 
-      # Guarda de segurança: só segue se for release/*
       - name: Guard (somente em release/*)
+        shell: bash
         run: |
           case "${GITHUB_REF_NAME}" in
             release/*) echo "OK: ${GITHUB_REF_NAME}";;
             *) echo "Este workflow só deve rodar em release/*"; exit 1;;
           esac
 
-      # Lê a versão base do package.json (ex.: 1.4.0)
       - name: Ler versão base do package.json
         id: ver
+        shell: bash
         run: |
           BASE=$(node -p "require('./package.json').version")
           echo "base=${BASE}" >> $GITHUB_OUTPUT
-          echo "Versão base: ${BASE}"
 
-      # Calcula o próximo RC com base nas tags existentes vX.Y.Z-rc.N
       - name: Calcular próximo RC
         id: rc
+        shell: bash
         run: |
-          set -euo pipefail
+          set -eo pipefail
           BASE="${{ steps.ver.outputs.base }}"
-          LAST=$(git tag -l "v${BASE}-rc.*" | sed -E 's/.*-rc\.([0-9]+)/\1/' | sort -n | tail -1)
-          if [ -z "${LAST}" ]; then NEXT=1; else NEXT=$((LAST+1)); fi
-          TAG="v${BASE}-rc.${NEXT}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "Próxima RC: ${TAG}"
+          TAGS="$(git tag -l "v${BASE}-rc.[0-9]*" || true)"
+          if [ -z "$TAGS" ]; then LAST=0
+          else LAST="$(printf '%s\n' "$TAGS" | sed -E 's/.*-rc\.([0-9]+)$/\1/' | sort -n | tail -1)"; fi
+          NEXT=$((LAST + 1))
+          echo "tag=v${BASE}-rc.${NEXT}" >> $GITHUB_OUTPUT
 
-      # Cria a tag anotada do RC e envia ao GitHub
-      - name: Criar tag RC
+      - name: Criar tag RC (anotada)
+        shell: bash
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} a partir de ${GITHUB_REF_NAME}"
           git push origin "${{ steps.rc.outputs.tag }}"
-
-      # Atualiza CHANGELOG incrementalmente (padrão Angular)
-      - name: Atualizar CHANGELOG (incremental)
-        run: |
-          npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
-          git add CHANGELOG.md
-          git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
-          git push origin HEAD:${GITHUB_REF_NAME}
 ```
 
-> **Deploy QA por tag:** se quiser deploy automático em QA por **RC tag**, crie outro workflow que **escute tags** `v*-rc.*` e chame sua plataforma de deploy (ex.: Vercel CLI com `vercel --prod --token ...`).
+> **Se quiser “pré-release” no GitHub** (página de Release) para cada RC, crie um workflow opcional que **escute tags** `v*-rc.*` e publique uma Release **prerelease** com notas automáticas.
 
----
-
-### B) **Prod** — `.github/workflows/prod-on-tag.yml`
-
-> Dispara quando uma **tag estável** `vX.Y.Z` é criada (`git flow release finish`).
+### B) **Pré-release no GitHub para RC** — `.github/workflows/qa-on-tag.yml` (opcional)
 
 ```yaml
-# .github/workflows/prod-on-tag.yml
-name: Prod deploy on stable tag
+# Cria uma GitHub Release "pre-release" toda vez que uma tag RC é criada
+name: pre-release on RC tag
 
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+" # apenas tags estáveis SemVer
+      - "v*-rc.*"     # qualquer vX.Y.Z-rc.N
 
 jobs:
-  release:
-    permissions:
-      contents: write
+  prerelease:
+    permissions: { contents: write }
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
-      # (Opcional) Build/publicação do app / artefatos / deploy para PROD
-      # Ex.: chamar Vercel/Infra/Helm/etc.
+      # Gera notas só desde a última tag
+      - name: Gerar notas desta RC
+        run: npx -y conventional-changelog-cli -p angular -r 1 > RC_NOTES.md
 
-      # Gera notas a partir de Conventional Commits
-      - name: Gerar release notes
-        id: notes
-        run: |
-          npx -y conventional-changelog-cli -p angular -r 0 -o RELEASE_NOTES.md
-          echo "generated=true" >> $GITHUB_OUTPUT
+      - name: Publicar GitHub Release (pre-release)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }} (QA)
+          body_path: RC_NOTES.md
+          prerelease: true
+```
 
-      # Publica GitHub Release com as notas
+### C) **PROD** — `.github/workflows/prod-on-tag.yml`
+
+```yaml
+# Dispara quando uma tag estável vX.Y.Z é criada (finish)
+name: Prod deploy on stable tag
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"  # somente estáveis
+
+jobs:
+  release:
+    permissions: { contents: write }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      # (Opcional) Build/deploy para PROD aqui
+      # ex.: vercel --prod, helm upgrade, etc.
+
+      - name: Gerar Release Notes (Conventional Commits)
+        run: npx -y conventional-changelog-cli -p angular -r 0 -o RELEASE_NOTES.md
+
       - name: Publicar GitHub Release
-        if: steps.notes.outputs.generated == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
@@ -343,9 +340,7 @@ jobs:
 
 ---
 
-## Tabelas de referência
-
-### Convenções de nomes
+## Convenções de nomes
 
 | Tipo         | Padrão                    | Exemplo                        |
 | ------------ | ------------------------- | ------------------------------ |
@@ -358,28 +353,29 @@ jobs:
 
 ### SemVer — quando mudar
 
-- **MAJOR**: quebrar compatibilidade (breaking changes).
-- **MINOR**: novas features compatíveis.
-- **PATCH**: correções/pequenos ajustes.
+* **MAJOR**: quebra de compatibilidade.
+* **MINOR**: novas features compatíveis.
+* **PATCH**: correções e pequenos ajustes.
 
 ---
 
 ## Checklists
 
-### Antes de criar uma release (`release/X.Y.Z`)
+### Antes de criar `release/X.Y.Z`
 
-- [ ] `develop` atualizada e verde.
-- [ ] **`package.json.version = X.Y.Z`** (ajustado na branch de release).
-- [ ] PRs essenciais mesclados.
-- [ ] Lint/tests ok.
+* [ ] `develop` atualizada e verde.
+* [ ] **`package.json.version = X.Y.Z`** (na **release**).
+* [ ] PRs essenciais mesclados.
+* [ ] Lint/tests ok.
 
 ### Para aprovar RC e promover a PROD
 
-- [ ] RC implantado e testado em QA (`vX.Y.Z-rc.N`).
-- [ ] Testes funcionais/integração aprovados.
-- [ ] `CHANGELOG.md` revisado.
-- [ ] `git flow release finish X.Y.Z` executado.
-- [ ] `git push origin master develop --tags` concluído.
+* [ ] RC implantado e testado em QA (`vX.Y.Z-rc.N`).
+* [ ] Testes funcionais/integração aprovados.
+* [ ] Notas conferidas (Release Notes/CHANGELOG).
+* [ ] Anti-divergência executado (`pull --ff-only` em `master`, `develop`, `release/*`).
+* [ ] `git flow release finish X.Y.Z` executado.
+* [ ] `git push origin master develop --tags` concluído.
 
 ---
 
@@ -389,10 +385,10 @@ jobs:
 # Últimas tags (mais novas primeiro)
 git tag --sort=-creatordate | head
 
-# Commits incluídos entre duas versões estáveis
+# Commits entre versões estáveis
 git log --oneline v1.3.0..v1.4.0
 
-# Diff entre dois RCs
+# Diff entre RCs
 git diff --stat v1.4.0-rc.2..v1.4.0-rc.3
 
 # O que mudou na release atual vs develop
@@ -409,7 +405,7 @@ git diff --name-only origin/develop...HEAD
 git checkout develop && git pull
 git flow feature start HYP-123-new-widget
 # ... commits semânticos ...
-git flow feature publish HYP-123-new-widget
+git flow feature publish
 # abrir PR -> develop
 ```
 
@@ -417,22 +413,26 @@ git flow feature publish HYP-123-new-widget
 
 ```bash
 # Criar release
-git checkout develop && git pull
+git checkout develop && git pull --ff-only
 git flow release start 1.4.0
 npm version --no-git-tag-version 1.4.0
 git add package.json package-lock.json 2>/dev/null || true
 git commit -m "chore(release): set package.json version to 1.4.0"
 git push -u origin release/1.4.0     # dispara automação de RC
 
-# Aprovado em QA
+# Aprovado em QA → finalize com anti-divergência
+git fetch --all --prune
+git checkout master  && git pull --ff-only origin master
+git checkout develop && git pull --ff-only origin develop
+git checkout release/1.4.0 && git pull --ff-only origin release/1.4.0
 git flow release finish 1.4.0
-git push origin master develop --tags   # publica tag estável v1.4.0
+git push origin master develop --tags
 ```
 
 ### HOTFIX (produção urgente)
 
 ```bash
-git checkout master && git pull
+git checkout master && git pull --ff-only
 git flow hotfix start 1.4.1
 # ... commits ...
 git flow hotfix finish 1.4.1
@@ -443,5 +443,5 @@ git push origin master develop --tags
 
 Com isso:
 
-- **DEV** tem um passo-a-passo claro do dia a dia.
-- **TECH LEAD** controla **versionamento**, **RCs**, **QA** e **PROD** via tags e changelog, mantendo rastreabilidade de “o que entrou em cada pacote”.
+* **DEV** tem um roteiro simples e repetível para o dia a dia.
+* **TECH LEAD** controla **versionamento**, **RCs**, **QA** e **PROD** por **tags**, com notas/relatórios automáticos — e sem travar o `finish` por divergências.
