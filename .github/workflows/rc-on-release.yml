@@ -1,0 +1,44 @@
+name: RC Tag from release
+on:
+  push:
+    branches: [release]
+
+jobs:
+  tag-rc:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Read base version
+        id: ver
+        run: |
+          BASE=$(cat VERSION | tr -d '\n')
+          echo "base=${BASE}" >> $GITHUB_OUTPUT
+
+      - name: Compute next RC
+        id: rc
+        run: |
+          set -euo pipefail
+          BASE="${{ steps.ver.outputs.base }}"
+          LAST=$(git tag -l "v${BASE}-rc.*" | sed -E 's/.*-rc\.([0-9]+)/\1/' | sort -n | tail -1)
+          if [ -z "${LAST}" ]; then NEXT=1; else NEXT=$((LAST+1)); fi
+          TAG="v${BASE}-rc.${NEXT}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Create RC tag
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} from branch release"
+          git push origin "${{ steps.rc.outputs.tag }}"
+
+      - name: Update CHANGELOG
+        run: |
+          npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
+          git add CHANGELOG.md
+          git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
+          git push origin HEAD:${GITHUB_REF_NAME}
+
