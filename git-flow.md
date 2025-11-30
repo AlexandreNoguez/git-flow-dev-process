@@ -50,7 +50,7 @@ git flow feature start HYP-123-add-search
 git add .
 git commit -m "feat(search): add debounced query and empty state"
 
-# Push feature branch and open PR to "dev"
+# Aqui será feito o Push da feature branch e deverá ser aberta PR para branch develop
 git flow <tipo-da-branch> publish
 # Open PR on GitHub → base=dev, compare=feature/HYP-123-add-search
 ```
@@ -75,26 +75,35 @@ git checkout dev && git pull origin dev
 ## O que **NÃO** fazer
 
 - **Não** versionar `VERSION` nem criar tags. Isso é papel do **Tech Lead**.
-- **Não** comitar diretamente em `main` ou `releases/*`.
+- **Não** comitar diretamente em `main`, `develop` ou `releases/*`.
 
 ## Hotfix só para DEV (não PROD)
 
 Se for correção que **não** precisa ir urgente à produção, trate como _bugfix_ normal (branch `bugfix/*` → PR para `dev`).
 
+Se for correção urgente/chamados:
+1. Criar uma branch hotfix (que será criada a partir da branch master).
+2. Corrigir o problema e commitar na sua branch hotfix
+3. Fazer o push para o repositório remoto com o comando `git flow hotfix publish`
+4. Solicitar ao techlead que gere uma nova versão de correção do problema.
 ---
 
 # 2) TECH LEAD — Versionamento, RCs, QA e PROD
 
 ## Objetivo
 
-- Congelar uma versão da `dev`, estabilizar em `releases/x.y.z`, produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**, e quando aprovado, promover para **PROD** com a **tag estável** `vX.Y.Z` na `main`.
+- Congelar uma versão da `dev`
+- Estabilizar em `releases/x.y.z`
+- Produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**
+- Quando aprovado, promover para **PROD** com a **tag estável** `vX.Y.Z` na `main`.
 - Gerar **CHANGELOG** automático com base em Conventional Commits.
 
 ## Pré-requisitos
 
-- `dev` verde (build/tests ok).
+- `develop` verde (build/tests ok).
 - `VERSION` atualizado com o **próximo** `X.Y.Z` que será lançado.
 - Git-flow e prefixos configurados (ver bloco no início).
+<!-- corrigir lógica para azure devops -->
 - GitHub Actions para **RC** e, opcionalmente, **Prod** (modelos abaixo).
 - Opcional: integrações de deploy (Vercel, etc.) ligadas às **tags**.
 
@@ -288,8 +297,8 @@ jobs:
 
 | Tipo         | Padrão                    | Exemplo                        |
 | ------------ | ------------------------- | ------------------------------ |
-| Feature      | `feature/<ticket>-<slug>` | `feature/HYP-321-async-cache`  |
-| Bugfix (DEV) | `bugfix/<ticket>-<slug>`  | `bugfix/HYP-654-broken-filter` |
+| Feature      | `feature/<ticket>-<slug>` | `feature/ECO-321-async-cache`  |
+| Bugfix (DEV) | `bugfix/<ticket>-<slug>`  | `bugfix/ECO-654-broken-filter` |
 | Release      | `releases/<X.Y.Z>`        | `releases/1.2.0`               |
 | Hotfix       | `hotfix/<X.Y.Z>`          | `hotfix/1.2.1`                 |
 | RC Tag (QA)  | `vX.Y.Z-rc.N`             | `v1.2.0-rc.3`                  |
