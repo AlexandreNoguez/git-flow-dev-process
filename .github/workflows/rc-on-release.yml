@@ -1,28 +1,22 @@
 name: RC Tag from releases
-
 on:
   push:
     branches:
-      - "releases/**"   # Dispara em qualquer releases/x.y.z (prefixo do git-flow)
+      - "releases/**"
 
 jobs:
   tag-rc:
-    # Evitar RCs duplicados em pushes simultâneos da MESMA releases
     concurrency:
       group: rc-${{ github.ref }}
       cancel-in-progress: false
-
     permissions:
       contents: write
-
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout com histórico completo (precisamos ver tags anteriores)
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
-      # Garantia defensiva: só seguir se for releases/*
       - name: Guard (somente em releases/*)
         run: |
           case "${GITHUB_REF_NAME}" in
@@ -30,7 +24,6 @@ jobs:
             *) echo "Este workflow só deve rodar em releases/*"; exit 1;;
           esac
 
-      # Ler a versão base a partir do package.json (ex.: 1.4.0)
       - name: Ler versão base do package.json
         id: ver
         run: |
@@ -38,27 +31,36 @@ jobs:
           echo "base=${BASE}" >> $GITHUB_OUTPUT
           echo "Versão base: ${BASE}"
 
-      # Calcular próximo RC a partir das tags existentes (vX.Y.Z-rc.N)
       - name: Calcular próximo RC
         id: rc
         run: |
           set -euo pipefail
           BASE="${{ steps.ver.outputs.base }}"
-          LAST=$(git tag -l "v${BASE}-rc.*" | sed -E 's/.*-rc\.([0-9]+)/\1/' | sort -n | tail -1)
+          LAST=$(git tag -l "v${BASE}-rc.*" | sort -V | tail -1)
           if [ -z "${LAST}" ]; then NEXT=1; else NEXT=$((LAST+1)); fi
           TAG="v${BASE}-rc.${NEXT}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Próxima RC: ${TAG}"
 
-      # Criar a tag anotada do RC e enviar para o GitHub
-      - name: Criar tag RC
+      # ↓↓↓ GERAR NOTAS A PARTIR DOS COMMITS (entre a última tag e o HEAD)
+      - name: Gerar notas para a tag (Conventional Commits)
+        id: notes
+        run: |
+          mkdir -p .tmp
+          # Gera notas APENAS desde a última tag (r=1)
+          npx -y conventional-changelog-cli -p angular -r 1 > .tmp/TAG_NOTES.md
+          echo "preview:"
+          head -n 30 .tmp/TAG_NOTES.md || true
+
+      # ↓↓↓ CRIAR A TAG ANOTADA USANDO AS NOTAS GERADAS
+      - name: Criar tag RC (anotada com notas)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} a partir de ${GITHUB_REF_NAME}"
+          git tag -a "${{ steps.rc.outputs.tag }}" -F .tmp/TAG_NOTES.md
           git push origin "${{ steps.rc.outputs.tag }}"
 
-      # Atualizar CHANGELOG incrementalmente (padrão Conventional Commits - Angular)
+      # (Opcional) Atualizar CHANGELOG.md incremental
       - name: Atualizar CHANGELOG (incremental)
         run: |
           npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
