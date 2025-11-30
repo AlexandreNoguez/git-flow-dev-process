@@ -34,3 +34,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} from branch release"
           git push origin "${{ steps.rc.outputs.tag }}"
+
+      - name: Update CHANGELOG
+        run: |
+          npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
+          git add CHANGELOG.md
+          git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
+          git push origin HEAD:${GITHUB_REF_NAME}
+
