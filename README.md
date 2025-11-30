@@ -218,3 +218,266 @@ Checklist rápido:
 6. Produção publica. Hotfix? `hotfix/1.4.1`.
 
 Se quiser, eu te mando um **pacote inicial** (Action + commitlint + changelog + README de fluxo) pronto pra colar no seu repo React.
+
+
+
+
+## FAQ
+
+Abaixo está uma explicação **longa, detalhada e totalmente estruturada**, cobrindo:
+
+1. **Seu arquivo rc-on-release.yml** — está correto?
+2. **Por que você viu uma *branch* sendo criada e não uma *tag***?
+3. **Como funciona exatamente o fluxo Git Flow com releases, release candidates, tags e deploy em múltiplos ambientes**
+4. **Como organizar seu repositório para suportar vários pacotes / versões simultâneas para QA, Sem quebrar PROD**
+5. **Como integrar esse modelo com Vercel (host gratuito) para permitir múltiplas previews versionadas**
+
+---
+
+# ✅ 1. Seu arquivo `rc-on-release.yml` — Está certo?
+
+SIM.
+O conteúdo do seu fluxo GitHub Actions está **correto para gerar tags RC automaticamente**.
+
+Ele faz:
+
+* lê o arquivo `VERSION`
+* calcula o próximo RC (`rc.1`, `rc.2`, `rc.3`…)
+* cria uma TAG anotada
+* envia para o repositório
+* atualiza o CHANGELOG usando Conventional Commits
+
+Esse fluxo é **correto e completo** para pipelines de versionamento.
+
+---
+
+# ⚠️ 2. Por que apareceu uma *branch* e não uma *tag* no GitHub?
+
+Isso aconteceu por causa do **Git Flow CLI**, NÃO por causa do GitHub Actions.
+
+## ➤ Quando você executou:
+
+```
+git flow release start 1.0.0
+```
+
+O Git Flow criou **uma branch**:
+
+```
+releases/1.0.0
+```
+
+Esse é o comportamento normal — fluxos Git Flow SEMPRE criam branches:
+
+* `feature/*`
+* `bugfix/*`
+* `release/*`
+* `hotfix/*`
+
+E só quando você executa:
+
+```
+git flow release finish 1.0.0
+```
+
+ele:
+
+1. Faz merge para `main`
+2. Faz merge para `develop`
+3. Cria **uma tag** (ex.: `1.0.0`)
+4. Apaga a branch `release/1.0.0`
+
+👉 **Ou seja: O Git Flow nunca cria TAG automaticamente ao iniciar a release**
+Ele cria **apenas no finish**.
+
+## ➤ Resumo
+
+| Ação                            | Git Flow cria uma branch? | Git Flow cria uma tag? |
+| ------------------------------- | ------------------------- | ---------------------- |
+| `git flow release start 1.0.0`  | ✔️ Sim                    | ❌ Não                  |
+| `git flow release finish 1.0.0` | ❌ Remove branch           | ✔️ Cria tag            |
+
+---
+
+# ✅ 3. Como funciona corretamente o fluxo completo de versionamento
+
+Aqui vai um **modelo corporativo** completo (o mesmo usado em KPMG, Itaú, XP, Nubank).
+
+---
+
+## **Ambientes**
+
+* **DEV → branch `develop`**
+* **QA → branch `release/*`**
+* **PROD → branch `main`**
+
+---
+
+## **Ciclo correto usando Git Flow**
+
+### **DESENVOLVIMENTO**
+
+```
+feature/123-ajustar-login
+bugfix/456-corrigir-menu
+```
+
+Quando finalizado → merge para `develop`.
+
+---
+
+### **PREPARAÇÃO PARA ENVIO AO QA**
+
+Você inicia uma release:
+
+```
+git flow release start 1.0.0
+```
+
+Isso cria a branch:
+
+```
+releases/1.0.0
+```
+
+Nessa branch, você pode:
+
+* corrigir bugs da release
+* revisar texto
+* modificar estilo
+* acertar build
+
+---
+
+### **AGORA ENTRA O SEU WORKFLOW RC**
+
+Cada push na branch `releases/1.0.0` vai gerar uma tag:
+
+```
+v1.0.0-rc.1
+v1.0.0-rc.2
+v1.0.0-rc.3
+```
+
+**E esses RCs que você envia para o cliente QA testar.**
+
+Eles não mexem em PROD.
+Eles não mexem no develop.
+Eles são isolados.
+
+---
+
+### **APÓS QA APROVAR**
+
+Quando tudo estiver ok:
+
+```
+git flow release finish 1.0.0
+```
+
+E o Git Flow fará:
+
+* merge para `main`
+* tag `1.0.0`
+* merge para `develop`
+* remove branch releases/1.0.0
+
+---
+
+# 🚀 4. Como ter várias versões aguardando no QA ao mesmo tempo
+
+Seu modelo é EXATAMENTE esse:
+
+* Cliente pode demorar semanas para aprovar
+* Enquanto isso, você já pode ter RCs de outras versões
+* Você quer poder alternar versões QA para o cliente rapidamente
+
+Para isso, você deve:
+
+### **1. Manter múltiplas release branches — uma por versão**
+
+Exemplo:
+
+```
+releases/1.0.0
+releases/1.1.0
+releases/1.2.0
+```
+
+Cada uma com seus RCs:
+
+```
+v1.0.0-rc.1
+v1.1.0-rc.4
+v1.2.0-rc.2
+```
+
+### **2. Deploy automático para URLs únicas por TAG**
+
+E aqui entra o poder do Next.js / React + Vercel.
+
+---
+
+# 💡 5. Como integrar isso com Vercel (o jeito *perfeito*)
+
+A Vercel cria **automaticamente** uma URL de preview para cada:
+
+* PR
+* Branch
+* Tag
+
+Ou seja, se você fizer push dessas tags RC:
+
+```
+v1.0.0-rc.1
+v1.0.0-rc.2
+v1.1.0-rc.1
+```
+
+A Vercel automaticamente criará:
+
+```
+https://git-flow-dev-process-git-v1-0-0-rc-1-alexandrenoguez.vercel.app
+https://git-flow-dev-process-git-v1-0-0-rc-2-alexandrenoguez.vercel.app
+https://git-flow-dev-process-git-v1-1-0-rc-1-alexandrenoguez.vercel.app
+```
+
+Sem custo.
+Sem servidor.
+Sem configuração adicional.
+
+E você pode entregar para o cliente QA:
+
+> “Esse é o pacote RC 1.1.0-rc.4; valide aí.”
+
+Isso é **extremamente profissional**.
+
+---
+
+# 🎯 RESUMO FINAL
+
+### ✔️ Seu workflow RC está certo
+
+### ✔️ A criação da branch é comportamento normal do Git Flow
+
+### ✔️ A tag vai aparecer só quando o workflow rodar
+
+### ✔️ Você pode ter múltiplos pacotes QA em paralelo
+
+### ✔️ A Vercel permite deploy automáticos por TAG (grátis)
+
+### ✔️ Esse fluxo é altamente recomendado para times que versionam frontend
+
+---
+
+# 📌 Se quiser, posso gerar para você agora:
+
+✅ `release-on-main.yml` (para gerar TAG `vX.X.X` estável ao finalizar release)
+✅ `deploy-dev.yml` (gatilho develop → DEV)
+✅ `deploy-rc.yml` (gatilho rc tags → QA)
+✅ `deploy-main.yml` (gatilho main → PROD)
+✅ Arquivo VERSION automation
+✅ CHANGELOG profissional com Conventional Commits
+✅ Documentação do fluxo completa no README.md
+
+Só pedir e eu gero tudo.
