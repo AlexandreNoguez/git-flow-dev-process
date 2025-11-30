@@ -1,3 +1,7 @@
+## [1.0.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.3-rc.3...v1.0.3) (2025-11-30)
+
+
+
 ## [1.0.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.3-rc.2...v1.0.3) (2025-11-30)
 
 
