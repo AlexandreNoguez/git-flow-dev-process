@@ -116,7 +116,7 @@ git checkout dev && git pull origin dev
 # Start the new release (SemVer version)
 git flow release start 1.1.0
 
-# Commit any last-minute version bump if needed
+# Commit qualquer correção de última hora (opcional)
 git add VERSION
 git commit -m "chore(release): bump VERSION to 1.1.0"
 
