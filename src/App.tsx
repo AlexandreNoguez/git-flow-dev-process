@@ -25,6 +25,7 @@ function App() {
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
+        <p>New home page line</p>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
