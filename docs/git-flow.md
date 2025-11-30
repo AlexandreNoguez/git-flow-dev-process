@@ -9,13 +9,14 @@ Modelo de branches, versionamento **SemVer (`x.y.z`)**, geração de **RCs (`vX.
 
 * **Modelo de branches**
 
-  * `develop` → desenvolvimento contínuo (ambiente **DEV**).
-  * `release/x.y.z` → estabilização da versão; gera **RCs** (vai para **QA**).
-  * `master` → produção; recebe **tags estáveis** `vX.Y.Z`.
+  - `develop` → desenvolvimento contínuo (ambiente DEV).
+  - `release/x.y.z` → estabilização para gerar RCs que vão ao **QA**.
+  - `master` → produção; recebe **tags estáveis** `vX.Y.Z`.
 
-* **Versionamento:** **SemVer**
-  `MAJOR.MINOR.PATCH`
-  `vX.Y.Z-rc.N` = *release candidate* (QA) · `vX.Y.Z` = versão estável (PROD).
+- **Versionamento:** **SemVer** (`MAJOR.MINOR.PATCH`)
+
+  - `vX.Y.Z-rc.N` = _release candidate_ (QA).
+  - `vX.Y.Z` = versão estável (PROD).
 
 * **Commits:** **Conventional Commits** (`feat:`, `fix:`, `perf:`, `refactor:`, `chore:`, etc.).
 
@@ -25,7 +26,7 @@ Modelo de branches, versionamento **SemVer (`x.y.z`)**, geração de **RCs (`vX.
 
 ## Pré-requisitos
 
-* Git-flow com **seus nomes reais** de branches:
+- Git-flow configurado com seus **nomes reais** de branches:
 
 ```bash
 # Inicializa git-flow com defaults
@@ -75,8 +76,7 @@ git flow bugfix publish
 # Abrir PR -> develop
 ```
 
-## Sincronização rápida
-**caso acuse divergência na develop pode tentar os seguintes comandos**:
+## Sincronizar máquina
 
 ```bash
 git fetch --all --prune
@@ -85,8 +85,8 @@ git checkout develop && git pull --ff-only origin develop
 
 ## O que **NÃO** fazer
 
-* **Não** alterar `package.json.version` nem criar tags — isso é do **Tech Lead** na *branch de release*.
-* **Não** comitar diretamente em `master`, `develop` ou `release/*`.
+- **Não** alterar `package.json.version` nem criar tags. Isso é papel do **Tech Lead** na _branch de release_.
+- **Não** comitar diretamente em `master`, `develop` ou `release/*`.
 
 ## Hotfix que **não** vai para PROD
 
@@ -99,19 +99,19 @@ Para incidente **urgente em PROD**, ver seção **Hotfix** do Tech Lead.
 
 ## Objetivo
 
-* Congelar a `develop`.
-* Estabilizar em `release/x.y.z`.
-* Produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**.
-* Aprovado? **Finalizar** e marcar **tag estável** `vX.Y.Z` em `master`.
-* Gerar **Release Notes/CHANGELOG** a partir dos **Conventional Commits**.
+- Congelar versão da `develop`.
+- Estabilizar em `release/x.y.z`.
+- Produzir **RCs** (`vX.Y.Z-rc.N`) para **QA**.
+- Aprovado? Promover a **PROD** com **tag estável** `vX.Y.Z` na `master`.
+- Gerar **CHANGELOG** automático (Conventional Commits).
 
 ## Pré-requisitos
 
-* `develop` **verde** (build/tests ok).
-* **`package.json.version`** ajustado **na branch de release** para o **próximo** `X.Y.Z`.
-* Git-flow e prefixos configurados.
-* Workflows do GitHub para **RC** e, opcionalmente, **PROD** (abaixo).
-* (Opcional) deploys por **tag** (Vercel/Azure/etc).
+- `develop` verde (build/tests ok).
+- **`package.json.version`** ajustado na branch de release para o **próximo** `X.Y.Z`.
+- Git-flow e prefixos configurados.
+- GitHub Actions para **RC** e, opcionalmente, **Prod** (modelos abaixo).
+- Opcional: deploys (Vercel/Azure/etc.) ligados às **tags**.
 
 ## 2.1 Criar a **release** (a partir de `develop`)
 
@@ -137,8 +137,8 @@ git push -u origin release/1.4.0
 
 ## 2.2 Enviar RC para **QA**
 
-* Entregar ao QA a **tag** (ex.: `v1.4.0-rc.2`) e/ou o **link de deploy** dessa tag.
-* Ver diferenças entre RCs:
+- Entregar ao QA a **tag** (ex.: `v1.4.0-rc.2`) e/ou o **link do deploy** dessa tag.
+- Para ver diferenças entre RCs:
 
 ```bash
 git log --oneline v1.4.0-rc.1..v1.4.0-rc.2
@@ -217,10 +217,7 @@ name: RC Tag from release
 on:
   push:
     branches:
-      - "release/**"           # qualquer release/x.y.z
-    paths-ignore:
-      - "CHANGELOG.md"         # evita loop em caso de commits manuais
-      - ".tmp/**"
+      - "release/**" # qualquer release/x.y.z (prefixo git-flow)
 
 jobs:
   tag-rc:
@@ -269,43 +266,23 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.rc.outputs.tag }}" -m "RC ${{ steps.rc.outputs.tag }} a partir de ${GITHUB_REF_NAME}"
           git push origin "${{ steps.rc.outputs.tag }}"
+
+      # Atualiza CHANGELOG incrementalmente (padrão Angular)
+      - name: Atualizar CHANGELOG (incremental)
+        run: |
+          npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
+          git add CHANGELOG.md
+          git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
+          git push origin HEAD:${GITHUB_REF_NAME}
 ```
 
-> **Se quiser “pré-release” no GitHub** (página de Release) para cada RC, crie um workflow opcional que **escute tags** `v*-rc.*` e publique uma Release **prerelease** com notas automáticas.
+> **Deploy QA por tag:** se quiser deploy automático em QA por **RC tag**, crie outro workflow que **escute tags** `v*-rc.*` e chame sua plataforma de deploy (ex.: Vercel CLI com `vercel --prod --token ...`).
 
-### B) **Pré-release no GitHub para RC** — `.github/workflows/qa-on-tag.yml` (opcional)
+---
 
-```yaml
-# Cria uma GitHub Release "pre-release" toda vez que uma tag RC é criada
-name: pre-release on RC tag
+### B) **Prod** — `.github/workflows/prod-on-tag.yml`
 
-on:
-  push:
-    tags:
-      - "v*-rc.*"     # qualquer vX.Y.Z-rc.N
-
-jobs:
-  prerelease:
-    permissions: { contents: write }
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-
-      # Gera notas só desde a última tag
-      - name: Gerar notas desta RC
-        run: npx -y conventional-changelog-cli -p angular -r 1 > RC_NOTES.md
-
-      - name: Publicar GitHub Release (pre-release)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }} (QA)
-          body_path: RC_NOTES.md
-          prerelease: true
-```
-
-### C) **PROD** — `.github/workflows/prod-on-tag.yml`
+> Dispara quando uma **tag estável** `vX.Y.Z` é criada (`git flow release finish`).
 
 ```yaml
 # Dispara quando uma tag estável vX.Y.Z é criada (finish)
@@ -314,7 +291,7 @@ name: Prod deploy on stable tag
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"  # somente estáveis
+      - "v[0-9]+.[0-9]+.[0-9]+" # apenas tags estáveis SemVer
 
 jobs:
   release:
@@ -353,29 +330,28 @@ jobs:
 
 ### SemVer — quando mudar
 
-* **MAJOR**: quebra de compatibilidade.
-* **MINOR**: novas features compatíveis.
-* **PATCH**: correções e pequenos ajustes.
+- **MAJOR**: quebrar compatibilidade (breaking changes).
+- **MINOR**: novas features compatíveis.
+- **PATCH**: correções/pequenos ajustes.
 
 ---
 
 ## Checklists
 
-### Antes de criar `release/X.Y.Z`
+### Antes de criar uma release (`release/X.Y.Z`)
 
-* [ ] `develop` atualizada e verde.
-* [ ] **`package.json.version = X.Y.Z`** (na **release**).
-* [ ] PRs essenciais mesclados.
-* [ ] Lint/tests ok.
+- [ ] `develop` atualizada e verde.
+- [ ] **`package.json.version = X.Y.Z`** (ajustado na branch de release).
+- [ ] PRs essenciais mesclados.
+- [ ] Lint/tests ok.
 
 ### Para aprovar RC e promover a PROD
 
-* [ ] RC implantado e testado em QA (`vX.Y.Z-rc.N`).
-* [ ] Testes funcionais/integração aprovados.
-* [ ] Notas conferidas (Release Notes/CHANGELOG).
-* [ ] Anti-divergência executado (`pull --ff-only` em `master`, `develop`, `release/*`).
-* [ ] `git flow release finish X.Y.Z` executado.
-* [ ] `git push origin master develop --tags` concluído.
+- [ ] RC implantado e testado em QA (`vX.Y.Z-rc.N`).
+- [ ] Testes funcionais/integração aprovados.
+- [ ] `CHANGELOG.md` revisado.
+- [ ] `git flow release finish X.Y.Z` executado.
+- [ ] `git push origin master develop --tags` concluído.
 
 ---
 
@@ -443,5 +419,5 @@ git push origin master develop --tags
 
 Com isso:
 
-* **DEV** tem um roteiro simples e repetível para o dia a dia.
-* **TECH LEAD** controla **versionamento**, **RCs**, **QA** e **PROD** por **tags**, com notas/relatórios automáticos — e sem travar o `finish` por divergências.
+- **DEV** tem um passo-a-passo claro do dia a dia.
+- **TECH LEAD** controla **versionamento**, **RCs**, **QA** e **PROD** via tags e changelog, mantendo rastreabilidade de “o que entrou em cada pacote”.
