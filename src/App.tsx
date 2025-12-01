@@ -21,7 +21,7 @@ function App() {
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
         </button>
-        <p>Código editado por Alexandre Noguez na release 1.0.6!</p>
+        <p>Código editado por Alexandre Noguez na release 1.0.8!</p>
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
