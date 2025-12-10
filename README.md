@@ -4,10 +4,10 @@
 
 Padronizar o fluxo de desenvolvimento usando **Git Flow (CLI)** em repositórios GitHub, com:
 
-* `main` como branch de produção;
-* `dev` como branch de integração;
-* branches de `feature`, `release` e `hotfix`;
-* fluxo específico para **Tech Leads** gerarem **tags** (RC e estáveis) com **descrição** e **changelog semi-automatizado**.
+- `main` como branch de produção;
+- `dev` como branch de integração;
+- branches de `feature`, `release` e `hotfix`;
+- fluxo específico para **Tech Leads** gerarem **tags** (RC e estáveis) com **descrição** e **changelog semi-automatizado**.
 
 > ⚠️ Desde o Git 2.51+, o Git Flow não vem mais embutido na instalação do Git (precisa ser instalado à parte). ([Jira][1])
 
@@ -17,23 +17,23 @@ Padronizar o fluxo de desenvolvimento usando **Git Flow (CLI)** em repositórios
 
 ### 2.1. Branches principais
 
-* **`main`**
+- **`main`**
 
-  * Sempre reflete o código em **produção**.
-  * Só recebe merge via **release** ou **hotfix**.
+  - Sempre reflete o código em **produção**.
+  - Só recebe merge via **release** ou **hotfix**.
 
-* **`dev`**
+- **`dev`**
 
-  * Branch de **integração**.
-  * Todas as **features** e **bugfixes** entram aqui antes de seguirem para release.
+  - Branch de **integração**.
+  - Todas as **features** e **bugfixes** entram aqui antes de seguirem para release.
 
 ### 2.2. Branches de suporte do Git Flow
 
 Padrão de nomes:
 
-* **feature**: `feature/<ticket>-<descricao-curta>`
-* **release**: `release/<versao>`
-* **hotfix**: `hotfix/<versao>`
+- **feature**: `feature/<ticket>-<descricao-curta>`
+- **release**: `release/<versao>`
+- **hotfix**: `hotfix/<versao>`
 
 Exemplos:
 
@@ -55,10 +55,10 @@ Formato:
 
 Tipos mais usados:
 
-* `feat`: nova funcionalidade
-* `fix`: correção de bug
-* `chore`: mudanças de infra/ci/build
-* `docs`, `test`, `refactor`, etc.
+- `feat`: nova funcionalidade
+- `fix`: correção de bug
+- `chore`: mudanças de infra/ci/build
+- `docs`, `test`, `refactor`, etc.
 
 Exemplos:
 
@@ -74,8 +74,8 @@ chore: update release pipeline
 
 ### 3.1. Pré-requisitos gerais
 
-* Git instalado (qualquer SO) ([Git][3])
-* Acesso ao repositório no GitHub (SSH ou HTTPS configurado).
+- Git instalado (qualquer SO) ([Git][3])
+- Acesso ao repositório no GitHub (SSH ou HTTPS configurado).
 
 ---
 
@@ -197,8 +197,8 @@ How to name your support branches? [support/]               (enter ou vazio)
 
 Isso grava a configuração em `.git/config` para aquele repositório, mantendo:
 
-* `main` como branch de produção;
-* `dev` como branch de desenvolvimento; ([Genie의 개발노트][9])
+- `main` como branch de produção;
+- `dev` como branch de desenvolvimento; ([Genie의 개발노트][9])
 
 ---
 
@@ -248,14 +248,14 @@ git push
 
 Abrir uma **Pull Request**:
 
-* **from**: `feature/HYP-123-add-search`
-* **to**: `dev`
+- **from**: `feature/HYP-123-add-search`
+- **to**: `dev`
 
 > 🔎 **Se o time exige PR obrigatória**:
 >
-> * faça o merge via GitHub (após review);
-> * depois só delete a branch local com `git branch -d feature/HYP-123-add-search`;
-> * **não** rode `git flow feature finish` nesse caso (o merge já foi feito).
+> - faça o merge via GitHub (após review);
+> - depois só delete a branch local com `git branch -d feature/HYP-123-add-search`;
+> - **não** rode `git flow feature finish` nesse caso (o merge já foi feito).
 
 ---
 
@@ -282,8 +282,8 @@ git flow feature finish ECO-123-add-search
 
 O que acontece:
 
-* Faz merge da feature em `dev` (normalmente com `--no-ff`);
-* Deleta a branch de feature local.
+- Faz merge da feature em `dev` (normalmente com `--no-ff`);
+- Deleta a branch de feature local.
 
 3. Subir alterações:
 
@@ -304,7 +304,7 @@ git push origin --delete feature/ECO-123-add-search
 
 Se não for abrir `hotfix` para produção, mas apenas corrigir algo em `dev`:
 
-* Crie uma **feature** ou **bugfix** curta (ex: `feature/HYP-999-fix-typo`) e siga o fluxo normal; **ou**
+- Crie uma **feature** ou **bugfix** curta (ex: `feature/HYP-999-fix-typo`) e siga o fluxo normal; **ou**
 
 ---
 
@@ -312,24 +312,24 @@ Se não for abrir `hotfix` para produção, mas apenas corrigir algo em `dev`:
 
 Esta seção descreve o fluxo recomendado para **Tech Leads**, incluindo:
 
-* criação de branches de **release**;
-* **tags** RC e estáveis;
-* geração de **changelog semi-automatizado** baseada em Conventional Commits.
+- criação de branches de **release**;
+- **tags** RC e estáveis;
+- geração de **changelog semi-automatizado** baseada em Conventional Commits.
 
 ### 6.1. Convenções de versão e tags
 
 Sugestão (adaptável):
 
-* Versão sem prefixo no Git Flow: `1.4.0`
-* Tags no repositório:
+- Versão sem prefixo no Git Flow: `1.4.0`
+- Tags no repositório:
 
-  * **Release Candidate**: `v1.4.0-rc.1`, `v1.4.0-rc.2`, etc.
-  * **Release estável**: `v1.4.0`
+  - **Release Candidate**: `v1.4.0-rc.1`, `v1.4.0-rc.2`, etc.
+  - **Release estável**: `v1.4.0`
 
 > Ex:
 >
-> * QA: usa tags `v1.4.0-rc.X`
-> * Produção: usa tags `v1.4.0`
+> - QA: usa tags `v1.4.0-rc.X`
+> - Produção: usa tags `v1.4.0`
 
 ---
 
@@ -407,9 +407,9 @@ npm install -D conventional-changelog-cli
 }
 ```
 
-* `-p conventionalcommits`: usa o preset dos Conventional Commits;
-* `-i CHANGELOG.md -s`: lê e sobrescreve o arquivo `CHANGELOG.md`;
-* `-r 0`: gera changelog para **todas** as versões desde o início.
+- `-p conventionalcommits`: usa o preset dos Conventional Commits;
+- `-i CHANGELOG.md -s`: lê e sobrescreve o arquivo `CHANGELOG.md`;
+- `-r 0`: gera changelog para **todas** as versões desde o início.
   (Em pipelines você pode ajustar para só a partir da última tag.)
 
 #### 6.4.3. Como o Tech Lead gera o changelog da release
@@ -460,10 +460,10 @@ git flow release finish 1.4.0
 
 O que o comando faz automaticamente: ([blog.betrybe.com][11])
 
-* Faz merge de `release/1.4.0` em `main`;
-* Cria **tag anotada** `1.4.0` em `main`;
-* Faz merge de volta em `dev` (para não perder commits de correção feitos na release);
-* Deleta a branch local `release/1.4.0`.
+- Faz merge de `release/1.4.0` em `main`;
+- Cria **tag anotada** `1.4.0` em `main`;
+- Faz merge de volta em `dev` (para não perder commits de correção feitos na release);
+- Deleta a branch local `release/1.4.0`.
 
 3. Enviar branches e tags:
 
@@ -542,8 +542,8 @@ git flow hotfix finish 1.4.1
 
 O que faz:
 
-* Merge do hotfix para `main` e `dev`;
-* Tag `1.4.1` criada em `main`.
+- Merge do hotfix para `main` e `dev`;
+- Tag `1.4.1` criada em `main`.
 
 6. Subir tudo:
 
@@ -601,12 +601,6 @@ git push origin dev
 ```
 
 ---
-
-Se você quiser, no próximo passo posso montar **templates prontos** de:
-
-* política de branch/PR (para colocar no `CONTRIBUTING.md`);
-* modelo de PR com checklist específico para Git Flow + Conventional Commits;
-* snippet de GitHub Actions para gerar changelog automaticamente quando sair uma nova tag `vX.Y.Z`.
 
 [1]: https://jira.atlassian.com/browse/SRCTREEWIN-14619?utm_source=chatgpt.com "Git-Flow not recognized with Microsoft Git (VFS) version 2.51.1 ..."
 [2]: https://www.conventionalcommits.org/en/v1.0.0/?utm_source=chatgpt.com "Conventional Commits"
