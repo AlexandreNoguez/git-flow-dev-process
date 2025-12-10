@@ -1,0 +1,89 @@
+name: Create GitHub Release from tag and CHANGELOG
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # dispara apenas para tags oficiais, ex: v1.4.0, v2.0.1
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # necessário para ler o repo; não vamos commitar nada aqui
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # garante histórico e tags completos
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Aqui NÃO rodamos npm ci / npm run changelog
+      # porque o CHANGELOG.md já foi atualizado pelo Tech Lead antes da tag
+
+      - name: Extract changelog section for this tag
+        id: extract_changelog
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"  # ex: v1.4.0
+          VERSION="${TAG_NAME#v}"        # remove o "v", fica 1.4.0
+
+          echo "TAG_NAME=${TAG_NAME}"
+          echo "VERSION=${VERSION}"
+
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "CHANGELOG.md not found!"
+            exit 1
+          fi
+
+          # Vamos gerar um arquivo temporário com apenas a seção da versão
+          # Procuramos por linhas que sejam:
+          #  - '## v1.4.0'
+          #  - '## 1.4.0'
+          # E pegamos até a próxima linha que começa com '## '
+          awk -v version="$VERSION" '
+            BEGIN { in_section=0 }
+            /^##[[:space:]]+v?[0-9]+\.[0-9]+\.[0-9]+/ {
+              if (in_section == 1) {
+                exit
+              }
+              # Checa se esta linha é a versão que queremos
+              line = $0
+              gsub(/^##[[:space:]]+/, "", line)
+              gsub(/^v/, "", line)
+              if (line == version) {
+                in_section = 1
+              }
+            }
+            in_section == 1 { print }
+          ' CHANGELOG.md > CHANGELOG_SECTION.md
+
+          if [ ! -s CHANGELOG_SECTION.md ]; then
+            echo "No changelog section found for version ${VERSION}"
+            exit 1
+          fi
+
+          echo "Changelog section for ${VERSION}:"
+          cat CHANGELOG_SECTION.md
+
+          # Escapa o conteúdo para ser usado como output do step
+          SECTION=$(python - << 'EOF'
+            import os, json
+            text = open("CHANGELOG_SECTION.md", encoding="utf-8").read()
+            print(json.dumps(text))
+            EOF
+            )
+          echo "section=${SECTION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }} # ex: v1.4.0
+          name: ${{ github.ref_name }} # nome da release (pode customizar)
+          body: ${{ fromJson(steps.extract_changelog.outputs.section) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

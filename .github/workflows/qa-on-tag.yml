@@ -1,36 +1,36 @@
-name: pre-release on RC tag
-on:
-  push:
-    tags:
-      - "v*-rc.*" # qualquer RC
+# name: pre-release on RC tag
+# on:
+#   push:
+#     tags:
+#       - "v*-rc.*" # qualquer RC
 
-jobs:
-  prerelease:
-    permissions: { contents: write }
-    runs-on: ubuntu-latest
-    concurrency:
-      group: qa-${{ github.ref }} # 1 job por tag
-      cancel-in-progress: false
+# jobs:
+#   prerelease:
+#     permissions: { contents: write }
+#     runs-on: ubuntu-latest
+#     concurrency:
+#       group: qa-${{ github.ref }} # 1 job por tag
+#       cancel-in-progress: false
 
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+#     steps:
+#       - uses: actions/checkout@v4
+#         with: { fetch-depth: 0 }
 
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
+#       - uses: actions/setup-node@v4
+#         with: { node-version: "20" }
 
-      - name: Gerar notas (RC)
-        run: |
-          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
-            npx -y conventional-changelog-cli -p angular -r 1 > RC_NOTES.md
-          else
-            npx -y conventional-changelog-cli -p angular -r 0 > RC_NOTES.md
-          fi
+#       - name: Gerar notas (RC)
+#         run: |
+#           if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+#             npx -y conventional-changelog-cli -p angular -r 1 > RC_NOTES.md
+#           else
+#             npx -y conventional-changelog-cli -p angular -r 0 > RC_NOTES.md
+#           fi
 
-      - name: Publicar GitHub Release (pré-release)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }} (pre-release)
-          body_path: RC_NOTES.md
-          prerelease: true
+#       - name: Publicar GitHub Release (pré-release)
+#         uses: softprops/action-gh-release@v2
+#         with:
+#           tag_name: ${{ github.ref_name }}
+#           name: ${{ github.ref_name }} (pre-release)
+#           body_path: RC_NOTES.md
+#           prerelease: true
