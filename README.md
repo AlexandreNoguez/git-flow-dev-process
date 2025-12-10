@@ -266,18 +266,18 @@ Abrir uma **Pull Request**:
 1. Certificar que a feature está atualizada:
 
 ```bash
-git checkout feature/ECO-123-add-search
+git checkout feature/HYP-123-add-search
 git pull
 git checkout dev
 git pull origin dev
-git checkout feature/ECO-123-add-search
+git checkout feature/HYP-123-add-search
 # git rebase dev    # opcional, para alinhar com dev
 ```
 
 2. Finalizar a feature:
 
 ```bash
-git flow feature finish ECO-123-add-search
+git flow feature finish HYP-123-add-search
 ```
 
 O que acontece:
@@ -295,7 +295,7 @@ git push origin dev
 Se quiser remover a branch remota:
 
 ```bash
-git push origin --delete feature/ECO-123-add-search
+git push origin --delete feature/HYP-123-add-search
 ```
 
 ---
@@ -572,9 +572,6 @@ git push origin dev
 git clone git@github.com:empresa/projeto.git
 cd projeto
 
-git checkout -b dev
-git push -u origin dev
-
 git flow init
 # production = main
 # development = dev
@@ -587,21 +584,21 @@ git flow init
 git checkout dev
 git pull origin dev
 
-git flow feature start ECO-123-add-search
-git push -u origin feature/ECO-123-add-search
+git flow feature start HYP-123-add-search
+git push -u origin feature/HYP-123-add-search
 
 # commit e push normalmente
-# abrir PR: feature/ECO-123-add-search -> dev
-# após merge: git branch -d feature/ECO-123-add-search
+# abrir PR: feature/HYP-123-add-search -> dev
+# após merge: git branch -d feature/HYP-123-add-search
 ```
 
-**Nova feature (modo finish pelo CLI):**
+**(MENOS RECOMENDADO) - Nova feature (modo finish pelo CLI):**
 
 ```bash
-git flow feature start ECO-123-add-search
+git flow feature start HYP-123-add-search
 # dev work...
 
-git flow feature finish ECO-123-add-search
+git flow feature finish HYP-123-add-search
 git push origin dev
 ```
 
