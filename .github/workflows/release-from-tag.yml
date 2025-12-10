@@ -29,55 +29,74 @@ jobs:
       - name: Extract changelog section for this tag
         id: extract_changelog
         run: |
-          TAG_NAME="${GITHUB_REF_NAME}"  # ex: v1.4.0
-          VERSION="${TAG_NAME#v}"        # remove o "v", fica 1.4.0
+                TAG_NAME="${GITHUB_REF_NAME}"  # ex: v1.0.9
+                VERSION="${TAG_NAME#v}"        # remove o "v", fica 1.0.9
 
-          echo "TAG_NAME=${TAG_NAME}"
-          echo "VERSION=${VERSION}"
+                echo "TAG_NAME=${TAG_NAME}"
+                echo "VERSION=${VERSION}"
 
-          if [ ! -f "CHANGELOG.md" ]; then
-            echo "CHANGELOG.md not found!"
-            exit 1
-          fi
+                if [ ! -f "CHANGELOG.md" ]; then
+                  echo "CHANGELOG.md not found!"
+                  exit 1
+                fi
 
-          # Vamos gerar um arquivo temporário com apenas a seção da versão
-          # Procuramos por linhas que sejam:
-          #  - '## v1.4.0'
-          #  - '## 1.4.0'
-          # E pegamos até a próxima linha que começa com '## '
-          awk -v version="$VERSION" '
-            BEGIN { in_section=0 }
-            /^##[[:space:]]+v?[0-9]+\.[0-9]+\.[0-9]+/ {
-              if (in_section == 1) {
-                exit
-              }
-              # Checa se esta linha é a versão que queremos
-              line = $0
-              gsub(/^##[[:space:]]+/, "", line)
-              gsub(/^v/, "", line)
-              if (line == version) {
-                in_section = 1
-              }
-            }
-            in_section == 1 { print }
-          ' CHANGELOG.md > CHANGELOG_SECTION.md
+                export VERSION
 
-          if [ ! -s CHANGELOG_SECTION.md ]; then
-            echo "No changelog section found for version ${VERSION}"
-            exit 1
-          fi
+                SECTION=$(python - << 'EOF'
+                import os, re, json, sys
 
-          echo "Changelog section for ${VERSION}:"
-          cat CHANGELOG_SECTION.md
+                version = os.environ["VERSION"]  # e.g. "1.0.9"
 
-          # Escapa o conteúdo para ser usado como output do step
-          SECTION=$(python - << 'EOF'
-            import os, json
-            text = open("CHANGELOG_SECTION.md", encoding="utf-8").read()
-            print(json.dumps(text))
-            EOF
-            )
-          echo "section=${SECTION}" >> "$GITHUB_OUTPUT"
+                try:
+                    with open("CHANGELOG.md", encoding="utf-8") as f:
+                        text = f.read()
+                except FileNotFoundError:
+                    print("CHANGELOG.md not found", file=sys.stderr)
+                    sys.exit(1)
+
+                # Vamos dividir o arquivo em blocos:
+                # [preâmbulo], (heading, body), (heading, body), ...
+                # Onde heading é algo tipo: "## [1.0.9](...) (2025-12-10)"
+                parts = re.split(r'(^##[^\n]*$)', text, flags=re.M)
+
+                section_text = None
+
+                if len(parts) > 1:
+                    # parts[0] é o preâmbulo; depois vem pares (heading, body)
+                    for i in range(1, len(parts), 2):
+                        heading = parts[i].strip()
+                        body = parts[i+1]
+
+                        # Queremos um heading que contenha exatamente "[1.0.9]"
+                        token = f"[{version}]"
+                        if token in heading:
+                            section_text = heading + body
+                            break
+
+                if not section_text:
+                    print(f"No changelog section found for version {version}", file=sys.stderr)
+                    sys.exit(1)
+
+                # Salva pra debug
+                with open("CHANGELOG_SECTION.md", "w", encoding="utf-8") as f:
+                    f.write(section_text)
+
+                print("=== Extracted section ===")
+                print(section_text)
+                print("=== End of section ===")
+
+                # Escapa o texto em JSON pra enviar como output
+                print(json.dumps(section_text))
+                EOF
+                )
+
+                if [ -z "$SECTION" ]; then
+                  echo "Empty changelog section; failing."
+                  exit 1
+                fi
+
+                echo "section=${SECTION}" >> "$GITHUB_OUTPUT"
+
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
