@@ -1,4 +1,9 @@
-## [1.0.9](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.5...v1.0.9) (2025-12-10)
+## [1.0.9](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.12...v1.0.9) (2025-12-10)
+
+### Features
+
+* **home:** add new input and add oAuth name to each button ([96e8970](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/96e89706880c26eb1d04781cf88539f07bc75847))
+## [1.0.9-rc.6](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.5...v1.0.9-rc.6) (2025-12-10)
 ## [1.0.9-rc.5](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.4...v1.0.9-rc.5) (2025-12-10)
 ## [1.0.9-rc.4](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.10-rc.2...v1.0.9-rc.4) (2025-12-10)
 ## [1.0.9-rc.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.10-rc.1...v1.0.9-rc.3) (2025-12-10)
