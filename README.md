@@ -1,483 +1,620 @@
-Bora desenhar um fluxo enxuto, “git-flow friendly”, que te dá **múltiplas versões em QA ao mesmo tempo**, com **tags limpas**, **changelog** e **promoção segura** para produção — usando **GitHub + Vercel (Hobby)**.
+# Guia de Uso do Git Flow (CLI) com branches `dev` e `main`
 
-Vou escrever as explicações em PT-BR e deixar **todo código/CI em inglês** como você prefere. 😉
+## 1. Objetivo
+
+Padronizar o fluxo de desenvolvimento usando **Git Flow (CLI)** em repositórios GitHub, com:
+
+- `main` como branch de produção;
+- `dev` como branch de integração;
+- branches de `feature`, `release` e `hotfix`;
+- fluxo específico para **Tech Leads** gerarem **tags** (RC e estáveis) com **descrição** e **changelog semi-automatizado**.
+
+> ⚠️ Desde o Git 2.51+, o Git Flow não vem mais embutido na instalação do Git (precisa ser instalado à parte). ([Jira][1])
 
 ---
 
-# 1) Branches (Git Flow simplificado)
+## 2. Conceitos rápidos
 
-* `main` → produção
-* `dev` → integração contínua do DEV
-* `feature/*` e `bugfix/*` → trabalho do dia a dia
-* `release/x.y.z` → candidato à próxima versão (QA testa aqui)
-* `hotfix/x.y.z+1` → correção urgente sobre `main`
+### 2.1. Branches principais
 
-> Você pode ter **várias** `release/*` abertas (ex.: `release/1.4.0`, `release/1.5.0`), cada uma com seu link de QA.
+- **`main`**
 
-Comandos (git-flow-avh):
+  - Sempre reflete o código em **produção**.
+  - Só recebe merge via **release** ou **hotfix**.
+
+- **`dev`**
+
+  - Branch de **integração**.
+  - Todas as **features** e **bugfixes** entram aqui antes de seguirem para release.
+
+### 2.2. Branches de suporte do Git Flow
+
+Padrão de nomes:
+
+- **feature**: `feature/<ticket>-<descricao-curta>`
+- **release**: `release/<versao>`
+- **hotfix**: `hotfix/<versao>`
+
+Exemplos:
 
 ```bash
-git flow init -d
-git flow feature start HYP-1234       # dev
-git flow feature publish HYP-1234       # Acessar repositório e abrir PR para dev
+feature/HYP-123-add-search
+release/1.4.0
+hotfix/1.4.1
+```
 
-git flow release start 1.4.0           # abre QA
-git flow release publish 1.4.0
-# commits de ajustes em release/1.4.0 ...
-git flow release finish 1.4.0          # merge -> main + tag final v1.4.0 + merge back em develop
+### 2.3. Commits (recomendado: Conventional Commits)
 
-git flow hotfix start 1.4.1
-git flow hotfix finish 1.4.1
+Para possibilitar changelog automático, recomendamos seguir **Conventional Commits**: ([Conventional Commits][2])
+
+Formato:
+
+```text
+<type>[optional scope]: <description>
+```
+
+Tipos mais usados:
+
+- `feat`: nova funcionalidade
+- `fix`: correção de bug
+- `chore`: mudanças de infra/ci/build
+- `docs`, `test`, `refactor`, etc.
+
+Exemplos:
+
+```text
+feat: add gmail OAuth button
+fix(create-workspace): handle null workspace hash
+chore: update release pipeline
 ```
 
 ---
 
-# 2) Versão e tags
+## 3. Instalação
 
-Use [**SemVer**](https://semver.org/) + **prerelease**:
+### 3.1. Pré-requisitos gerais
 
-* Tag final: `v1.4.0`
-* RCs em QA: `v1.4.0-rc.1`, `v1.4.0-rc.2`, …
-
-**Regra:**
-
-* Cada push na `release/x.y.z` gera um RC novo (`vX.Y.Z-rc.N`).
-* Quando o cliente aprovar um RC específico, promovemos **exatamente aquele commit** para `main` e criamos a tag final `vX.Y.Z`.
+- Git instalado (qualquer SO) ([Git][3])
+- Acesso ao repositório no GitHub (SSH ou HTTPS configurado).
 
 ---
 
-# 3) Vercel (Hobby) — como ter várias versões de QA
+### 3.2. Ubuntu 24.04
 
-1. Conecte o repositório à Vercel.
-2. **Production Branch = `main`**.
-3. **Preview deployments** habilitados para **todas as branches**.
-4. Ative **Branch subdomains** (Settings → Domains → Branch subdomains).
-
-Resultado:
-
-* Cada `release/*` ganha uma **URL estável** de preview:
-
-  ```
-  release-1-4-0--seu-projeto.vercel.app
-  release-1-5-0--seu-projeto.vercel.app
-  ```
-* Você envia **um link por versão** para cada usuário QA.
-* `main` publica automaticamente em produção no domínio principal.
-
-> Dica: se quiser um link “QA fixo” (ex.: `qa.seudominio.com` apontando pro “release corrente”), crie uma **branch “qa”** e faça `git merge --ff-only` do commit aprovado nela. Configure um **projeto secundário** na Vercel cujo “Production Branch” seja `qa`. Assim `qa.seudominio.com` sempre reflete a versão QA “oficial”, sem perder as prévias por branch.
-
----
-
-# 4) Automação de RCs e Release Notes (GitHub Actions)
-
-### 4.1 RC tag em cada push para `release/*`
-
-Crie `.github/workflows/rc-tag.yml`:
-
-```yaml
-name: RC Tag
-on:
-  push:
-    branches:
-      - 'release/*'
-
-jobs:
-  tag-rc:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Compute next RC tag
-        id: rc
-        run: |
-          set -euo pipefail
-          BRANCH="${GITHUB_REF_NAME}"             # e.g., release/1.4.0
-          BASE="${BRANCH#release/}"               # 1.4.0
-          LAST=$(git tag -l "v${BASE}-rc.*" | sed -E 's/.*-rc\.([0-9]+)/\1/' | sort -n | tail -1)
-          if [ -z "${LAST}" ]; then NEXT=1; else NEXT=$((LAST+1)); fi
-          TAG="v${BASE}-rc.${NEXT}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-
-      - name: Create RC tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.rc.outputs.tag }}" -m "Release candidate ${{ steps.rc.outputs.tag }}"
-          git push origin "${{ steps.rc.outputs.tag }}"
-
-      - name: Generate changelog (conventional commits)
-        run: |
-          npx -y conventional-changelog-cli -p angular -i CHANGELOG.md -s
-          git add CHANGELOG.md
-          git commit -m "chore(changelog): update for ${{ steps.rc.outputs.tag }}" || true
-          git push origin HEAD:${GITHUB_REF_NAME}
-```
-
-> Se quiser **criar um pre-release** no GitHub automaticamente, adicione `softprops/action-gh-release@v2` após criar a tag, com `prerelease: true`.
-
-### 4.2 Tag final ao aprovar
-
-Opções:
-
-* **Manual e simples**: no PR `release/x.y.z → main`, dê merge **sem squash**. Em seguida:
-
-  ```bash
-  git checkout main
-  git pull
-  git tag -a v1.4.0 -m "Release 1.4.0"
-  git push origin v1.4.0
-  ```
-
-  E a Vercel publica.
-
-* **Automático**: outro workflow que, ao mergear PR da release em `main`, detecta `release/x.y.z` e cria `vX.Y.Z`.
-
----
-
-# 5) Changelog e version bump
-
-No frontend React:
+1. **Instalar Git**
 
 ```bash
-npm i -D @commitlint/{cli,config-conventional} husky conventional-changelog-cli
+sudo apt update
+sudo apt install -y git
 ```
 
-`commitlint.config.js`
+2. **Instalar Git Flow**
 
-```js
-module.exports = { extends: ['@commitlint/config-conventional'] };
+```bash
+sudo apt install -y git-flow
 ```
 
-`package.json` (scripts):
+O pacote `git-flow` nos repositórios Debian/Ubuntu instala a versão AVH do Git Flow (extensão em shell baseada no modelo do Vincent Driessen). ([Stack Overflow][4])
 
-```json
+3. **Verificar instalação**
+
+```bash
+git --version
+git flow version
+```
+
+---
+
+### 3.3. Windows (Git for Windows + Git Flow)
+
+#### 3.3.1. Instalar Git for Windows
+
+1. Baixar o instalador de Git for Windows no site oficial. ([Git][5])
+2. Durante a instalação, habilitar o **Git Bash**.
+
+#### 3.3.2. Instalar Git Flow via Chocolatey (recomendado)
+
+1. Instalar **Chocolatey** conforme documentação oficial. ([ASP.NET Hacker][6])
+2. Abrir **PowerShell como Administrador** e executar:
+
+```powershell
+choco install gitflow-avh -y
+```
+
+O pacote `gitflow-avh` instala o Git Flow (AVH Edition) e integra com o Git Bash. ([GeeksforGeeks][7])
+
+3. Fechar e reabrir o **Git Bash**, então testar:
+
+```bash
+git flow version
+```
+
+#### 3.3.3. Alternativa: instalação manual (se Chocolatey não for permitido)
+
+1. Clonar o repositório do git-flow-avh:
+
+```bash
+git clone https://github.com/petervanderdoes/gitflow-avh.git
+```
+
+2. No **PowerShell como Administrador**, dentro da pasta `gitflow-avh`:
+
+```powershell
+contrib\msysgit-install.cmd "C:\Program Files\Git\usr"
+```
+
+3. Testar no Git Bash:
+
+````bash
+git flow version
+``` :contentReference[oaicite:7]{index=7}
+
+---
+
+## 4. Configurando o Git Flow em um repositório (dev + main)
+
+### 4.1. Preparar branches `main` e `dev`
+
+Se o repositório já existe no GitHub com branch `main`, clone normalmente:
+
+```bash
+git clone git@github.com:empresa/projeto.git
+cd projeto
+````
+
+Criar e subir a branch `dev` (uma única vez por repositório):
+
+```bash
+git checkout main
+git pull origin main
+
+git checkout -b dev
+git push -u origin dev
+```
+
+> Dica: no GitHub, configure a **branch padrão** do repositório para `dev` se for o branch onde a equipe cria PRs de feature. ([skoch.github.io][8])
+
+---
+
+### 4.2. Rodar `git flow init` com `main` e `dev`
+
+No repositório local, estando em qualquer branch (recomendado `dev`):
+
+```bash
+git flow init
+```
+
+Responda às perguntas:
+
+```text
+Which branch should be used for production releases? [main]  main
+Which branch should be used for development? [dev]           dev
+How to name your feature branches? [feature/]               (enter)
+How to name your release branches? [release/]               (enter)
+How to name your hotfix branches? [hotfix/]                 (enter)
+How to name your support branches? [support/]               (enter ou vazio)
+```
+
+Isso grava a configuração em `.git/config` para aquele repositório, mantendo:
+
+- `main` como branch de produção;
+- `dev` como branch de desenvolvimento; ([Genie의 개발노트][9])
+
+---
+
+## 5. Fluxo do dia a dia para Desenvolvedores
+
+### 5.1. Criar uma nova feature
+
+1. Atualizar a branch `dev` local:
+
+```bash
+git checkout dev
+git pull origin dev
+```
+
+2. Iniciar a feature com Git Flow:
+
+```bash
+git flow feature start HYP-123-add-search
+```
+
+Isso cria e muda para a branch:
+
+```text
+feature/HYP-123-add-search
+```
+
+3. Enviar branch para o GitHub (para abrir PR):
+
+```bash
+git flow feature publish
+```
+
+---
+
+### 5.2. Trabalhar na feature
+
+Ciclo normal:
+
+```bash
+# editar código...
+
+git status
+git add .
+git commit -m "feat: add search bar on header"
+git push
+```
+
+Abrir uma **Pull Request**:
+
+- **from**: `feature/HYP-123-add-search`
+- **to**: `dev`
+
+> 🔎 **Se o time exige PR obrigatória**:
+>
+> - faça o merge via GitHub (após review);
+> - depois só delete a branch local com `git branch -d feature/HYP-123-add-search`;
+> - **não** rode `git flow feature finish` nesse caso (o merge já foi feito).
+
+---
+
+### 5.3. Finalizar uma feature via Git Flow (modo “CLI faz o merge”)
+
+> Use este modo se o fluxo permitir merge direto na `dev` sem obrigatoriedade de PR.
+
+1. Certificar que a feature está atualizada:
+
+```bash
+git checkout feature/ECO-123-add-search
+git pull
+git checkout dev
+git pull origin dev
+git checkout feature/ECO-123-add-search
+# git rebase dev    # opcional, para alinhar com dev
+```
+
+2. Finalizar a feature:
+
+```bash
+git flow feature finish ECO-123-add-search
+```
+
+O que acontece:
+
+- Faz merge da feature em `dev` (normalmente com `--no-ff`);
+- Deleta a branch de feature local.
+
+3. Subir alterações:
+
+```bash
+git checkout dev
+git push origin dev
+```
+
+Se quiser remover a branch remota:
+
+```bash
+git push origin --delete feature/ECO-123-add-search
+```
+
+---
+
+### 5.4. Correções rápidas em `dev` (bugfix simples)
+
+Se não for abrir `hotfix` para produção, mas apenas corrigir algo em `dev`:
+
+- Crie uma **feature** ou **bugfix** curta (ex: `feature/HYP-999-fix-typo`) e siga o fluxo normal; **ou**
+
+---
+
+## 6. Fluxo de Release para Tech Leads
+
+Esta seção descreve o fluxo recomendado para **Tech Leads**, incluindo:
+
+- criação de branches de **release**;
+- **tags** RC e estáveis;
+- geração de **changelog semi-automatizado** baseada em Conventional Commits.
+
+### 6.1. Convenções de versão e tags
+
+Sugestão (adaptável):
+
+- Versão sem prefixo no Git Flow: `1.4.0`
+- Tags no repositório:
+
+  - **Release Candidate**: `v1.4.0-rc.1`, `v1.4.0-rc.2`, etc.
+  - **Release estável**: `v1.4.0`
+
+> Ex:
+>
+> - QA: usa tags `v1.4.0-rc.X`
+> - Produção: usa tags `v1.4.0`
+
+---
+
+### 6.2. Iniciar uma release
+
+1. Atualizar `dev`:
+
+```bash
+git checkout dev
+git pull origin dev
+```
+
+2. Iniciar branch de release:
+
+```bash
+git flow release start 1.4.0
+```
+
+Cria a branch:
+
+```text
+release/1.4.0
+```
+
+3. Push da branch release (para reviews e pipelines de QA):
+
+```bash
+git flow release publish #on release branch
+
+# optional command can be used:
+#git push -u origin release/1.4.0
+```
+
+---
+
+### 6.3. Criar tags RC para QA
+
+Sempre que quiser gerar uma **RC** para QA a partir da `release/1.4.0`:
+
+```bash
+git checkout release/1.4.0
+git pull
+
+git tag -a v1.4.0-rc.1 -m "Release candidate 1 for 1.4.0"
+git push origin v1.4.0-rc.1
+# optional command push all tags:
+# git push --tags
+```
+
+Para próxima RC:
+
+```bash
+git tag -a v1.4.0-rc.2 -m "Release candidate 2 for 1.4.0"
+git push origin v1.4.0-rc.2
+```
+
+O pipeline de QA pode ser configurado para disparar deploy quando recebe tags `*-rc.*`.
+
+---
+
+### 6.4. Gerar changelog semi-automatizado
+
+Para um changelog mais rico, baseado em **Conventional Commits**, podemos usar o pacote **`conventional-changelog-cli`** (Node.js). ([npmjs.com][10])
+
+#### 6.4.1. Instalação (devDependency)
+
+Na raiz do projeto:
+
+```bash
+npm install -D conventional-changelog-cli
+```
+
+#### 6.4.2. Script recomendado no `package.json`
+
+```jsonc
 {
   "scripts": {
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "version:prerelease": "npm version prerelease --preid rc",
-    "version:patch": "npm version patch",
-    "version:minor": "npm version minor",
-    "version:major": "npm version major"
+    "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0"
   }
 }
 ```
 
-> **Commits** no padrão **Conventional Commits** (feat, fix, perf, chore, docs…).
-> O **CHANGELOG.md** é atualizado pelo job de RC (e/ou no release final).
+- `-p conventionalcommits`: usa o preset dos Conventional Commits;
+- `-i CHANGELOG.md -s`: lê e sobrescreve o arquivo `CHANGELOG.md`;
+- `-r 0`: gera changelog para **todas** as versões desde o início.
+  (Em pipelines você pode ajustar para só a partir da última tag.)
+
+#### 6.4.3. Como o Tech Lead gera o changelog da release
+
+1. Estar na branch de release:
+
+```bash
+git checkout release/1.4.0
+git pull
+```
+
+2. Rodar script de changelog:
+
+```bash
+npm run changelog
+```
+
+3. Revisar o `CHANGELOG.md` (ajustar textos/títulos se necessário).
+
+4. Commitar o changelog:
+
+```bash
+git add CHANGELOG.md
+git commit -m "chore: update changelog for v1.4.0"
+git push
+```
+
+> 💡 Isso é “semi-automatizado”: a ferramenta gera a base, o Tech Lead faz o refinamento final.
 
 ---
 
-# 6) Promoção/congelamento do build
+### 6.5. Finalizar a release (merge em `main` + `dev` + tag estável)
 
-Quando o cliente aprovar um RC específico (ex.: `v1.4.0-rc.3`):
+Quando a release estiver OK em QA (última RC aprovada):
 
-1. Faça merge do **exato commit SHA** (ou “merge commit” da branch release) para `main`.
-2. Crie a tag final `v1.4.0`.
-3. A Vercel vai buildar a produção.
-   Se quiser promover **o mesmo build do RC** sem rebuild, use o CLI da Vercel (`vercel promote`) a partir do deployment ID do preview.
+1. Certificar que `release/1.4.0` está atualizada:
 
-Rollback? Na Vercel, escolha **um deployment anterior** e promova/rollback com 1 clique.
+```bash
+git checkout release/1.4.0
+git pull
+```
+
+2. Finalizar release com Git Flow:
+
+```bash
+git flow release finish 1.4.0
+```
+
+O que o comando faz automaticamente: ([blog.betrybe.com][11])
+
+- Faz merge de `release/1.4.0` em `main`;
+- Cria **tag anotada** `1.4.0` em `main`;
+- Faz merge de volta em `dev` (para não perder commits de correção feitos na release);
+- Deleta a branch local `release/1.4.0`.
+
+3. Enviar branches e tags:
+
+```bash
+git checkout main
+git push origin main --follow-tags
+
+git checkout dev
+git push origin dev
+```
+
+4. (Opcional) Padronizar a tag com prefixo `v` no GitHub:
+
+Se quiser manter o padrão `v1.4.0`, pode:
+
+```bash
+git tag -a v1.4.0 1.4.0 -m "Release v1.4.0"
+git push origin v1.4.0
+```
+
+> Em pipelines, você pode escutar **apenas tags `v*`** para produção.
 
 ---
 
-# 7) Compatibilidade e “não quebrar QA/Prod”
+### 6.6. Criar Release no GitHub usando tag e changelog
 
-Checklist rápido:
+No GitHub:
 
-* **Feature flags** (env/remote config) para esconder funcionalidades não aprovadas.
-* **APIs versionadas** (URL `v1`, headers ou “capabilities”).
-* **Migrations backward-compatible** (deploy 1: write dual-schema; deploy 2: trocar leitura; deploy 3: remover velho).
-* **Contracts** (OpenAPI/TS types) — valide no CI (ex.: `tsc --noEmit`, `zod`/`ajv`).
-* **Test matrix**: smoke/cypress para cada `release/*` (executa nos previews da Vercel).
-* **Linhas de base**: mantenha `release/*` congelando features novas; só entram fixes.
-
----
-
-# 8) Como o QA alterna de versão facilmente
-
-* Envie os **links por branch**:
-
-  * `https://release-1-4-0--seu-projeto.vercel.app`
-  * `https://release-1-5-0--seu-projeto.vercel.app`
-* Use um “índice” simples (README ou página interna) listando os RCs ativos + link de changelog.
+1. Ir em **Releases → Draft a new release**;
+2. Selecionar a tag `v1.4.0` (ou criar a partir dali);
+3. Copiar a seção correspondente a `v1.4.0` do `CHANGELOG.md`;
+4. Ajustar título (ex: `Release v1.4.0`) e colar o changelog na descrição;
+5. Publicar.
 
 ---
 
-# 9) Resumo operacional (ciclo)
+## 7. Fluxo de Hotfix para produção
 
-1. DEV entrega em `feature/*` → `develop`.
-2. Abrir `release/1.4.0`.
-3. Cada push na release gera `v1.4.0-rc.N` + preview estável na Vercel.
-4. Cliente testa vários RCs em paralelo (várias `release/*`).
-5. Aprovou o RC “bom”? Merge **exato commit** → `main` + `tag v1.4.0`.
-6. Produção publica. Hotfix? `hotfix/1.4.1`.
+Quando houver bug crítico em produção:
 
-Se quiser, eu te mando um **pacote inicial** (Action + commitlint + changelog + README de fluxo) pronto pra colar no seu repo React.
+1. Atualizar `main`:
 
+```bash
+git checkout main
+git pull origin main
+```
 
+2. Iniciar hotfix:
 
+```bash
+git flow hotfix start 1.4.1
+```
 
-## FAQ
+Cria:
 
-Abaixo está uma explicação **longa, detalhada e totalmente estruturada**, cobrindo:
+```text
+hotfix/1.4.1
+```
 
-1. **Seu arquivo rc-on-release.yml** — está correto?
-2. **Por que você viu uma *branch* sendo criada e não uma *tag***?
-3. **Como funciona exatamente o fluxo Git Flow com releases, release candidates, tags e deploy em múltiplos ambientes**
-4. **Como organizar seu repositório para suportar vários pacotes / versões simultâneas para QA, Sem quebrar PROD**
-5. **Como integrar esse modelo com Vercel (host gratuito) para permitir múltiplas previews versionadas**
+3. Implementar correção:
+
+```bash
+# editar código...
+git add .
+git commit -m "fix: handle null file hash on upload"
+git push -u origin hotfix/1.4.1
+```
+
+4. (Opcional) gerar um changelog parcial da hotfix (mesmo esquema da release).
+
+5. Finalizar hotfix:
+
+```bash
+git flow hotfix finish 1.4.1
+```
+
+O que faz:
+
+- Merge do hotfix para `main` e `dev`;
+- Tag `1.4.1` criada em `main`.
+
+6. Subir tudo:
+
+```bash
+git checkout main
+git push origin main --follow-tags
+
+git checkout dev
+git push origin dev
+```
+
+7. Criar release no GitHub para `v1.4.1` (opcional).
 
 ---
 
-# ✅ 1. Seu arquivo `rc-on-release.yml` — Está certo?
+## 8. Resumo rápido (cola para dev)
 
-SIM.
-O conteúdo do seu fluxo GitHub Actions está **correto para gerar tags RC automaticamente**.
+**Setup (por repo, feito 1x):**
 
-Ele faz:
+```bash
+git clone git@github.com:empresa/projeto.git
+cd projeto
 
-* lê o arquivo `VERSION`
-* calcula o próximo RC (`rc.1`, `rc.2`, `rc.3`…)
-* cria uma TAG anotada
-* envia para o repositório
-* atualiza o CHANGELOG usando Conventional Commits
+git checkout -b dev
+git push -u origin dev
 
-Esse fluxo é **correto e completo** para pipelines de versionamento.
+git flow init
+# production = main
+# development = dev
+# prefixes padrão
+```
+
+**Nova feature (modo com PR):**
+
+```bash
+git checkout dev
+git pull origin dev
+
+git flow feature start ECO-123-add-search
+git push -u origin feature/ECO-123-add-search
+
+# commit e push normalmente
+# abrir PR: feature/ECO-123-add-search -> dev
+# após merge: git branch -d feature/ECO-123-add-search
+```
+
+**Nova feature (modo finish pelo CLI):**
+
+```bash
+git flow feature start ECO-123-add-search
+# dev work...
+
+git flow feature finish ECO-123-add-search
+git push origin dev
+```
 
 ---
 
-# ⚠️ 2. Por que apareceu uma *branch* e não uma *tag* no GitHub?
-
-Isso aconteceu por causa do **Git Flow CLI**, NÃO por causa do GitHub Actions.
-
-## ➤ Quando você executou:
-
-```
-git flow release start 1.0.0
-```
-
-O Git Flow criou **uma branch**:
-
-```
-releases/1.0.0
-```
-
-Esse é o comportamento normal — fluxos Git Flow SEMPRE criam branches:
-
-* `feature/*`
-* `bugfix/*`
-* `release/*`
-* `hotfix/*`
-
-E só quando você executa:
-
-```
-git flow release finish 1.0.0
-```
-
-ele:
-
-1. Faz merge para `main`
-2. Faz merge para `develop`
-3. Cria **uma tag** (ex.: `1.0.0`)
-4. Apaga a branch `release/1.0.0`
-
-👉 **Ou seja: O Git Flow nunca cria TAG automaticamente ao iniciar a release**
-Ele cria **apenas no finish**.
-
-## ➤ Resumo
-
-| Ação                            | Git Flow cria uma branch? | Git Flow cria uma tag? |
-| ------------------------------- | ------------------------- | ---------------------- |
-| `git flow release start 1.0.0`  | ✔️ Sim                    | ❌ Não                  |
-| `git flow release finish 1.0.0` | ❌ Remove branch           | ✔️ Cria tag            |
-
----
-
-# ✅ 3. Como funciona corretamente o fluxo completo de versionamento
-
-Aqui vai um **modelo corporativo** completo (o mesmo usado em KPMG, Itaú, XP, Nubank).
-
----
-
-## **Ambientes**
-
-* **DEV → branch `develop`**
-* **QA → branch `release/*`**
-* **PROD → branch `main`**
-
----
-
-## **Ciclo correto usando Git Flow**
-
-### **DESENVOLVIMENTO**
-
-```
-feature/123-ajustar-login
-bugfix/456-corrigir-menu
-```
-
-Quando finalizado → merge para `develop`.
-
----
-
-### **PREPARAÇÃO PARA ENVIO AO QA**
-
-Você inicia uma release:
-
-```
-git flow release start 1.0.0
-```
-
-Isso cria a branch:
-
-```
-releases/1.0.0
-```
-
-Nessa branch, você pode:
-
-* corrigir bugs da release
-* revisar texto
-* modificar estilo
-* acertar build
-
----
-
-### **AGORA ENTRA O SEU WORKFLOW RC**
-
-Cada push na branch `releases/1.0.0` vai gerar uma tag:
-
-```
-v1.0.0-rc.1
-v1.0.0-rc.2
-v1.0.0-rc.3
-```
-
-**E esses RCs que você envia para o cliente QA testar.**
-
-Eles não mexem em PROD.
-Eles não mexem no develop.
-Eles são isolados.
-
----
-
-### **APÓS QA APROVAR**
-
-Quando tudo estiver ok:
-
-```
-git flow release finish 1.0.0
-```
-
-E o Git Flow fará:
-
-* merge para `main`
-* tag `1.0.0`
-* merge para `develop`
-* remove branch releases/1.0.0
-
----
-
-# 🚀 4. Como ter várias versões aguardando no QA ao mesmo tempo
-
-Seu modelo é EXATAMENTE esse:
-
-* Cliente pode demorar semanas para aprovar
-* Enquanto isso, você já pode ter RCs de outras versões
-* Você quer poder alternar versões QA para o cliente rapidamente
-
-Para isso, você deve:
-
-### **1. Manter múltiplas release branches — uma por versão**
-
-Exemplo:
-
-```
-releases/1.0.0
-releases/1.1.0
-releases/1.2.0
-```
-
-Cada uma com seus RCs:
-
-```
-v1.0.0-rc.1
-v1.1.0-rc.4
-v1.2.0-rc.2
-```
-
-### **2. Deploy automático para URLs únicas por TAG**
-
-E aqui entra o poder do Next.js / React + Vercel.
-
----
-
-# 💡 5. Como integrar isso com Vercel (o jeito *perfeito*)
-
-A Vercel cria **automaticamente** uma URL de preview para cada:
-
-* PR
-* Branch
-* Tag
-
-Ou seja, se você fizer push dessas tags RC:
-
-```
-v1.0.0-rc.1
-v1.0.0-rc.2
-v1.1.0-rc.1
-```
-
-A Vercel automaticamente criará:
-
-```
-https://git-flow-dev-process-git-v1-0-0-rc-1-alexandrenoguez.vercel.app
-https://git-flow-dev-process-git-v1-0-0-rc-2-alexandrenoguez.vercel.app
-https://git-flow-dev-process-git-v1-1-0-rc-1-alexandrenoguez.vercel.app
-```
-
-Sem custo.
-Sem servidor.
-Sem configuração adicional.
-
-E você pode entregar para o cliente QA:
-
-> “Esse é o pacote RC 1.1.0-rc.4; valide aí.”
-
-Isso é **extremamente profissional**.
-
----
-
-# 🎯 RESUMO FINAL
-
-### ✔️ Seu workflow RC está certo
-
-### ✔️ A criação da branch é comportamento normal do Git Flow
-
-### ✔️ A tag vai aparecer só quando o workflow rodar
-
-### ✔️ Você pode ter múltiplos pacotes QA em paralelo
-
-### ✔️ A Vercel permite deploy automáticos por TAG (grátis)
-
-### ✔️ Esse fluxo é altamente recomendado para times que versionam frontend
-
----
-
-# 📌 Se quiser, posso gerar para você agora:
-
-✅ `release-on-main.yml` (para gerar TAG `vX.X.X` estável ao finalizar release)
-✅ `deploy-dev.yml` (gatilho develop → DEV)
-✅ `deploy-rc.yml` (gatilho rc tags → QA)
-✅ `deploy-main.yml` (gatilho main → PROD)
-✅ Arquivo VERSION automation
-✅ CHANGELOG profissional com Conventional Commits
-✅ Documentação do fluxo completa no README.md
-
-Só pedir e eu gero tudo.
+[1]: https://jira.atlassian.com/browse/SRCTREEWIN-14619?utm_source=chatgpt.com "Git-Flow not recognized with Microsoft Git (VFS) version 2.51.1 ..."
+[2]: https://www.conventionalcommits.org/en/v1.0.0/?utm_source=chatgpt.com "Conventional Commits"
+[3]: https://git-scm.com/book/pt-br/v2/Come%C3%A7ando-Instalando-o-Git?utm_source=chatgpt.com "Instalando o Git"
+[4]: https://stackoverflow.com/questions/36442801/how-to-install-git-flow-1-9-1-avh-in-ubuntu-14?utm_source=chatgpt.com "How to install git-flow 1.9.1 AVH in Ubuntu 14?"
+[5]: https://git-scm.com/install/windows?utm_source=chatgpt.com "Git - Install for Windows"
+[6]: https://asp.net-hacker.rocks/2019/04/01/git-flow.html?utm_source=chatgpt.com "Git Flow - About, installing and using"
+[7]: https://www.geeksforgeeks.org/git/git-flow/?utm_source=chatgpt.com "Git Flow"
+[8]: https://skoch.github.io/Git-Workflow/?utm_source=chatgpt.com "Git Flow Setup"
+[9]: https://andrew75313.tistory.com/202?utm_source=chatgpt.com "(25.02.26) Git Flow 명령어와 활용 정리 - Genie의 개발노트"
+[10]: https://www.npmjs.com/package/conventional-changelog-cli?utm_source=chatgpt.com "conventional-changelog-cli"
+[11]: https://blog.betrybe.com/git/git-flow/?utm_source=chatgpt.com "Git Flow: o que é e como gerenciar branches? Exemplos!"
