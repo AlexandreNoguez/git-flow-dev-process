@@ -1,3 +1,11 @@
+# Changelog
+
+## [1.1.0](///compare/v1.0.9...v1.1.0) (2025-12-10)
+
+### Features
+
+* add new line 0215164
+
 ## [1.0.10](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9...v1.0.10) (2025-12-10)
 ## [1.0.9](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.12...v1.0.9) (2025-12-10)
 
