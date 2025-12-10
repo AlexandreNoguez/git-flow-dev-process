@@ -375,6 +375,8 @@ git pull
 
 git tag -a v1.4.0-rc.1 -m "Release candidate 1 for 1.4.0"
 git push origin v1.4.0-rc.1
+# optional command push all tags:
+# git push --tags
 ```
 
 Para próxima RC:
