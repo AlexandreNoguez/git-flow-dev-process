@@ -1,70 +1,70 @@
-name: Prod deploy on stable tag
-on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+" # apenas SemVer estável
+# name: Prod deploy on stable tag
+# on:
+#   push:
+#     tags:
+#       - "v[0-9]+.[0-9]+.[0-9]+" # apenas SemVer estável
 
-jobs:
-  release:
-    permissions: { contents: write }
-    runs-on: ubuntu-latest
-    concurrency:
-      group: prod-${{ github.ref }}
-      cancel-in-progress: false
+# jobs:
+#   release:
+#     permissions: { contents: write }
+#     runs-on: ubuntu-latest
+#     concurrency:
+#       group: prod-${{ github.ref }}
+#       cancel-in-progress: false
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true   # <-- garante que os tags estão disponíveis localmente
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           fetch-tags: true   # <-- garante que os tags estão disponíveis localmente
 
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
+#       - uses: actions/setup-node@v4
+#         with: { node-version: "20" }
 
-      # 1) Tentar usar a MENSAGEM DA TAG (git flow finish -m "...")
-      - name: Tentar usar mensagem da tag (se existir)
-        id: tagmsg
-        shell: bash
-        run: |
-          set -euo pipefail
-          CURRENT="${GITHUB_REF_NAME}"
-          # Lê o corpo (mensagem) da tag anotada
-          MSG="$(git for-each-ref "refs/tags/${CURRENT}" --format="%(contents)")" || true
-          if [ -n "${MSG:-}" ]; then
-            printf "%s" "$MSG" > RELEASE_NOTES.md
-            echo "used=tag-message" >> $GITHUB_OUTPUT
-          else
-            echo "used=none" >> $GITHUB_OUTPUT
-          fi
+#       # 1) Tentar usar a MENSAGEM DA TAG (git flow finish -m "...")
+#       - name: Tentar usar mensagem da tag (se existir)
+#         id: tagmsg
+#         shell: bash
+#         run: |
+#           set -euo pipefail
+#           CURRENT="${GITHUB_REF_NAME}"
+#           # Lê o corpo (mensagem) da tag anotada
+#           MSG="$(git for-each-ref "refs/tags/${CURRENT}" --format="%(contents)")" || true
+#           if [ -n "${MSG:-}" ]; then
+#             printf "%s" "$MSG" > RELEASE_NOTES.md
+#             echo "used=tag-message" >> $GITHUB_OUTPUT
+#           else
+#             echo "used=none" >> $GITHUB_OUTPUT
+#           fi
 
-      # 2) Se a mensagem da tag não existir, gerar notas ignorando RCs
-      - name: Gerar notas desta versão (ignorar RCs)
-        if: steps.tagmsg.outputs.used == 'none'
-        id: notes
-        shell: bash
-        run: |
-          set -euo pipefail
-          CURRENT="${GITHUB_REF_NAME}"
+#       # 2) Se a mensagem da tag não existir, gerar notas ignorando RCs
+#       - name: Gerar notas desta versão (ignorar RCs)
+#         if: steps.tagmsg.outputs.used == 'none'
+#         id: notes
+#         shell: bash
+#         run: |
+#           set -euo pipefail
+#           CURRENT="${GITHUB_REF_NAME}"
 
-          # Último estável anterior (pula -rc.*)
-          PREV_STABLE="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | sed -n '2p' || true)"
-          echo "CURRENT=$CURRENT"
-          echo "PREV_STABLE=$PREV_STABLE"
+#           # Último estável anterior (pula -rc.*)
+#           PREV_STABLE="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | sed -n '2p' || true)"
+#           echo "CURRENT=$CURRENT"
+#           echo "PREV_STABLE=$PREV_STABLE"
 
-          # Tenta gerar só a seção da versão atual (usando -r 2 e 'cortando' a parte da versão)
-          # Se o formato de cabeçalho mudar, o fallback abaixo cobre.
-          npx -y conventional-changelog-cli -p angular -r 2 > ALL_NOTES.md || true
-          awk "/^## \\[?${CURRENT#v}\\]?/ {flag=1; print; next} /^## \\[?${PREV_STABLE#v}\\]?/ {flag=0} flag" ALL_NOTES.md > RELEASE_NOTES.md || true
+#           # Tenta gerar só a seção da versão atual (usando -r 2 e 'cortando' a parte da versão)
+#           # Se o formato de cabeçalho mudar, o fallback abaixo cobre.
+#           npx -y conventional-changelog-cli -p angular -r 2 > ALL_NOTES.md || true
+#           awk "/^## \\[?${CURRENT#v}\\]?/ {flag=1; print; next} /^## \\[?${PREV_STABLE#v}\\]?/ {flag=0} flag" ALL_NOTES.md > RELEASE_NOTES.md || true
 
-          # Fallback: se ficou vazia, gera tudo
-          if [ ! -s RELEASE_NOTES.md ]; then
-            npx -y conventional-changelog-cli -p angular -r 0 > RELEASE_NOTES.md
-            echo "(fallback) gerado changelog completo"
-          fi
+#           # Fallback: se ficou vazia, gera tudo
+#           if [ ! -s RELEASE_NOTES.md ]; then
+#             npx -y conventional-changelog-cli -p angular -r 0 > RELEASE_NOTES.md
+#             echo "(fallback) gerado changelog completo"
+#           fi
 
-      - name: Publicar GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body_path: RELEASE_NOTES.md
+#       - name: Publicar GitHub Release
+#         uses: softprops/action-gh-release@v2
+#         with:
+#           tag_name: ${{ github.ref_name }}
+#           name: ${{ github.ref_name }}
+#           body_path: RELEASE_NOTES.md
