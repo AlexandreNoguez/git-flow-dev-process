@@ -357,7 +357,10 @@ release/1.4.0
 3. Push da branch release (para reviews e pipelines de QA):
 
 ```bash
-git push -u origin release/1.4.0
+git flow release publish #on release branch
+
+# optional command can be used:
+#git push -u origin release/1.4.0
 ```
 
 ---
