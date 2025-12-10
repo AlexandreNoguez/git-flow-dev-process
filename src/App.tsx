@@ -27,6 +27,7 @@ function App() {
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
+        <p>Linha nova adicionada.</p>
         <p>New home page line</p>
         <input type="search" name="search" id="search" placeholder="Buscar" />
         <button onClick={() => alert("oAuth Github")}>Github</button>
