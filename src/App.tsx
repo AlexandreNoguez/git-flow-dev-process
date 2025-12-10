@@ -26,10 +26,12 @@ function App() {
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
         <p>Linha nova adicionada.</p>
+        <p>Linha nova adicionada.</p>
         <p>New home page line</p>
         <input type="search" name="search" id="search" placeholder="Buscar" />
-        <button onClick={() => alert("oAuth")}>Github</button>
-        <button onClick={() => alert("oAuth")}>Gmail</button>
+        <button onClick={() => alert("oAuth Github")}>Github</button>
+        <button onClick={() => alert("oAuth Gmail")}>Gmail</button>
+        <button onClick={() => alert("oAuth facebook")}>facebook</button>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
