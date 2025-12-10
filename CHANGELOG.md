@@ -1,3 +1,4 @@
+## [1.0.10](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9...v1.0.10) (2025-12-10)
 ## [1.0.9](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.12...v1.0.9) (2025-12-10)
 
 ### Features
@@ -7,7 +8,7 @@
 ## [1.0.9-rc.5](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.4...v1.0.9-rc.5) (2025-12-10)
 ## [1.0.9-rc.4](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.10-rc.2...v1.0.9-rc.4) (2025-12-10)
 ## [1.0.9-rc.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.10-rc.1...v1.0.9-rc.3) (2025-12-10)
-## [1.0.9-rc.2](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9...v1.0.9-rc.2) (2025-12-10)
+## [1.0.9-rc.2](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.1...v1.0.9-rc.2) (2025-12-10)
 ## [1.0.9-rc.1](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.8...v1.0.9-rc.1) (2025-12-01)
 
 ### Features
