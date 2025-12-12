@@ -10,7 +10,7 @@ if (!version) {
   process.exit(1);
 }
 
-const changelogPath = "../CHANGELOG.md";
+const changelogPath = "CHANGELOG.md";
 
 if (!fs.existsSync(changelogPath)) {
   console.error(`File ${changelogPath} not found`);
