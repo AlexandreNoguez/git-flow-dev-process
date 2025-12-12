@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.6...v1.2.0) (2025-12-12)
+
+
+### Features
+
+* add new line to home page ([d9be9ee](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/d9be9eed6ae4a95c801888ac642d25fdddc825cd))
+* add new oAuth button ([fb3a694](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/fb3a6948271be19b8e84f37509af9fc69208c08d))
+
+
+### Bug Fixes
+
+* **home:** change title to samsung ([6d01a03](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/6d01a03b056e9445e681854fbeb396d272d655ff))
+
 ### [1.1.6](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.5...v1.1.6) (2025-12-12)
 
 ### [1.1.5](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.4...v1.1.5) (2025-12-12)
