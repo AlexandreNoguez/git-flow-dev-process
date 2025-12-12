@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.2...v1.1.3) (2025-12-12)
+
+
+### Bug Fixes
+
+* remove unused line ([6c64149](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/6c641490a4c752177d86a6bf223f97401f88e3cc))
+
 ### [1.1.2](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.1...v1.1.2) (2025-12-12)
 
 ## [1.1.1](///compare/v1.1.0...v1.1.1) (2025-12-10)
