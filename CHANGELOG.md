@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.4](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.3...v1.1.4) (2025-12-12)
+
+
+### Bug Fixes
+
+* change script extract notes ([227baf1](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/227baf103319f2600c2540760047dec1eb41913d))
+
 ### [1.1.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.2...v1.1.3) (2025-12-12)
 
 
