@@ -1,3 +1,6 @@
+// scripts/extract-notes.mjs
+// Usage: node scripts/extract-notes.mjs 1.1.3
+
 import fs from "node:fs";
 
 const version = process.argv[2];
@@ -7,43 +10,56 @@ if (!version) {
   process.exit(1);
 }
 
-const changelogPath = "CHANGELOG.md";
+const changelogPath = "../CHANGELOG.md";
 
 if (!fs.existsSync(changelogPath)) {
   console.error(`File ${changelogPath} not found`);
   process.exit(1);
 }
 
-const content = fs.readFileSync(changelogPath, "utf8");
+const changelog = fs.readFileSync(changelogPath, "utf8");
+const lines = changelog.split("\n");
 
-// Match lines like:
-// ## 1.1.0 (2025-12-10)
-// ## 1.1.0-rc.1 (2025-12-10)
-// etc.
-const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const headingRegex = new RegExp(`^##\\s+${escapedVersion}\\b.*$`, "m");
+const headerText = `[${version}]`;
 
-const match = content.match(headingRegex);
+let startIndex = -1;
 
-if (!match) {
-  console.error(`Version ${version} not found in CHANGELOG.md`);
+// Find the line that contains the version heading (## or ###)
+for (let i = 0; i < lines.length; i++) {
+  const line = lines[i].trim();
+  const isHeader =
+    (line.startsWith("## ") || line.startsWith("### ")) &&
+    line.includes(headerText);
+
+  if (isHeader) {
+    startIndex = i;
+    break;
+  }
+}
+
+if (startIndex === -1) {
+  console.error(`Version ${version} not found in ${changelogPath}`);
   process.exit(1);
 }
 
-const startIndex = match.index;
-const afterHeading = content.slice(startIndex);
+// Collect lines until the next version heading (## or ### with [...] )
+const result = [];
+for (let i = startIndex; i < lines.length; i++) {
+  const line = lines[i];
 
-// Find next "## " heading to cut only this section
-const nextHeadingRegex = /^##\s+/m;
-const restWithoutFirstLine = afterHeading.slice(afterHeading.indexOf("\n") + 1);
-const nextMatch = restWithoutFirstLine.match(nextHeadingRegex);
+  if (i > startIndex) {
+    const trimmed = line.trim();
+    const isNextHeader =
+      (trimmed.startsWith("## ") || trimmed.startsWith("### ")) &&
+      trimmed.includes("[") &&
+      trimmed.includes("]");
 
-let endIndex;
-if (nextMatch) {
-  endIndex = startIndex + afterHeading.indexOf("\n") + 1 + nextMatch.index;
-} else {
-  endIndex = content.length;
+    if (isNextHeader) {
+      break;
+    }
+  }
+
+  result.push(line);
 }
 
-const section = content.slice(startIndex, endIndex).trim();
-console.log(section);
+console.log(result.join("\n").trim());
