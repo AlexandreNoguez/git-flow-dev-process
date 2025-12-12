@@ -33,6 +33,7 @@ function App() {
         <button onClick={() => alert("oAuth Github")}>Github</button>
         <button onClick={() => alert("oAuth Gmail")}>Gmail</button>
         <button onClick={() => alert("oAuth facebook")}>facebook</button>
+        <button onClick={() => alert("oAuth Samsing")}>Samsung</button>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
