@@ -1,32 +1,80 @@
 {
   "name": "git-flow",
   "private": true,
-  "version": "1.0.9",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0"
+    "release": "release-it",
+    "release:dry": "release-it --dry-run",
+    "standard": "standard-version",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlexandreNoguez/git-flow-dev-process.git"
   },
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
     "@eslint/js": "^9.39.1",
+    "@release-it/conventional-changelog": "^10.0.2",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^4.2.2",
-    "conventional-changelog-cli": "^5.0.0",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "release-it": "^19.0.6",
+    "standard-version": "^9.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release v${version}",
+      "tagName": "v${version}",
+      "requireCleanWorkingDir": true
+    },
+    "npm": {
+      "publish": false
+    },
+    "github": {
+      "release": false
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "infile": "CHANGELOG.md",
+        "preset": {
+          "name": "conventionalcommits",
+          "types": [
+            {
+              "type": "feat",
+              "section": "Features"
+            },
+            {
+              "type": "fix",
+              "section": "Bug Fixes"
+            },
+            {
+              "type": "chore",
+              "section": "Chores"
+            }
+          ]
+        }
+      }
+    }
   }
 }

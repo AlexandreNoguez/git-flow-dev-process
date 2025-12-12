@@ -1,8 +1,64 @@
-## [1.0.9](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.5...v1.0.9) (2025-12-10)
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [1.2.0](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.6...v1.2.0) (2025-12-12)
+
+
+### Features
+
+* add new line to home page ([d9be9ee](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/d9be9eed6ae4a95c801888ac642d25fdddc825cd))
+* add new oAuth button ([fb3a694](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/fb3a6948271be19b8e84f37509af9fc69208c08d))
+
+
+### Bug Fixes
+
+* **home:** change title to samsung ([6d01a03](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/6d01a03b056e9445e681854fbeb396d272d655ff))
+
+### [1.1.6](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.5...v1.1.6) (2025-12-12)
+
+### [1.1.5](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.4...v1.1.5) (2025-12-12)
+
+
+### Bug Fixes
+
+* change script extract notes ([721cdcf](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/721cdcf9d0052e54e9b0198e1bc375c9bdd4e995))
+
+### [1.1.4](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.3...v1.1.4) (2025-12-12)
+
+
+### Bug Fixes
+
+* change script extract notes ([227baf1](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/227baf103319f2600c2540760047dec1eb41913d))
+
+### [1.1.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.2...v1.1.3) (2025-12-12)
+
+
+### Bug Fixes
+
+* remove unused line ([6c64149](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/6c641490a4c752177d86a6bf223f97401f88e3cc))
+
+### [1.1.2](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.1.1...v1.1.2) (2025-12-12)
+
+## [1.1.1](///compare/v1.1.0...v1.1.1) (2025-12-10)
+
+## [1.1.0](///compare/v1.0.9...v1.1.0) (2025-12-10)
+
+### Features
+
+* add new line 0215164
+
+## [1.0.10](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9...v1.0.10) (2025-12-10)
+## [1.0.9](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.12...v1.0.9) (2025-12-10)
+
+### Features
+
+* **home:** add new input and add oAuth name to each button ([96e8970](https://github.com/AlexandreNoguez/git-flow-dev-process/commit/96e89706880c26eb1d04781cf88539f07bc75847))
+## [1.0.9-rc.6](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.5...v1.0.9-rc.6) (2025-12-10)
 ## [1.0.9-rc.5](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.4...v1.0.9-rc.5) (2025-12-10)
 ## [1.0.9-rc.4](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.10-rc.2...v1.0.9-rc.4) (2025-12-10)
 ## [1.0.9-rc.3](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.10-rc.1...v1.0.9-rc.3) (2025-12-10)
-## [1.0.9-rc.2](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9...v1.0.9-rc.2) (2025-12-10)
+## [1.0.9-rc.2](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.9-rc.1...v1.0.9-rc.2) (2025-12-10)
 ## [1.0.9-rc.1](https://github.com/AlexandreNoguez/git-flow-dev-process/compare/v1.0.8...v1.0.9-rc.1) (2025-12-01)
 
 ### Features
